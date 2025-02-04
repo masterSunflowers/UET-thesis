@@ -20,7 +20,7 @@ class Calculator {
 
   hello() {
     console.log("Hello");
-
+    
   }
 
   divide(number) {

@@ -21,6 +21,7 @@ import { AutocompleteLoggingService } from "./util/AutocompleteLoggingService.js
 import AutocompleteLruCache from "./util/AutocompleteLruCache.js";
 import { HelperVars } from "./util/HelperVars.js";
 import { AutocompleteInput, AutocompleteOutcome } from "./util/types.js";
+import { RepoWindowMaker } from "./context/repocoder/parseProject.js"
 
 const autocompleteCache = AutocompleteLruCache.get();
 
@@ -166,6 +167,13 @@ export class CompletionProvider {
           input.completionId,
         );
         token = controller.signal;
+      }
+      // console.log("Enter here");
+      const repoWindowMaker = new RepoWindowMaker(20, 2);
+      const codeChunks = await repoWindowMaker.buildWindows();
+      for (const codeChunk of codeChunks) {
+        console.log(codeChunk);
+        console.log("================================");
       }
 
       const [snippetPayload, workspaceDirs] = await Promise.all([
