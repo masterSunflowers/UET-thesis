@@ -8,10 +8,11 @@ import { HelperVars } from "../util/HelperVars";
 import { ImportDefinitionsService } from "./ImportDefinitionsService";
 import { getSymbolsForSnippet } from "./ranking";
 import { RootPathContextService } from "./root-path-context/RootPathContextService";
-
+import { RepoCoderService } from "./repocoder/RepoCoderService"; 
 export class ContextRetrievalService {
   private importDefinitionsService: ImportDefinitionsService;
   private rootPathContextService: RootPathContextService;
+  private repoCoderService: RepoCoderService;
 
   constructor(private readonly ide: IDE) {
     this.importDefinitionsService = new ImportDefinitionsService(this.ide);
@@ -19,6 +20,7 @@ export class ContextRetrievalService {
       this.importDefinitionsService,
       this.ide,
     );
+    this.repoCoderService = new RepoCoderService();
   }
 
   public async getSnippetsFromImportDefinitions(
@@ -69,5 +71,11 @@ export class ContextRetrievalService {
       helper.filepath,
       helper.treePath,
     );
+  }
+
+  public async getRepoCoderSnippets(
+    helper: HelperVars
+  ): Promise<AutocompleteCodeSnippet[]> {
+    return this.repoCoderService.retrieve(helper.cursor, helper.fileLines, helper.filepath, 20);
   }
 }

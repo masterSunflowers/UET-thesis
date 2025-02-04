@@ -11,8 +11,8 @@ import {
 import { constructInitialPrefixSuffix } from "../templating/constructPrefixSuffix";
 
 import { AstPath, getAst, getTreePathAtCursor } from "./ast";
-import { AutocompleteInput } from "./types";
-
+import { AutocompleteInput} from "./types";
+import { Position } from "../..";
 /**
  * A collection of variables that are often accessed throughout the autocomplete pipeline
  * It's noisy to re-calculate all the time or inject them into each function
@@ -20,7 +20,7 @@ import { AutocompleteInput } from "./types";
 export class HelperVars {
   lang: AutocompleteLanguageInfo;
   treePath: AstPath | undefined;
-
+  private _cursor: Position | undefined;
   private _fileContents: string | undefined;
   private _fileLines: string[] | undefined;
   private _fullPrefix: string | undefined;
@@ -58,6 +58,7 @@ export class HelperVars {
     const { prunedPrefix, prunedSuffix } = this.prunePrefixSuffix();
     this._prunedPrefix = prunedPrefix;
     this._prunedSuffix = prunedSuffix;
+    this._cursor = this.input.pos;
 
     try {
       const ast = await getAst(this.filepath, fullPrefix + fullSuffix);
@@ -136,6 +137,15 @@ export class HelperVars {
       );
     }
     return this._fileLines;
+  }
+
+  get cursor(): Position {
+    if (this._cursor === undefined) {
+      throw new Error(
+        "HelperVars must be initialized before accessing cursor",
+      );
+    }
+    return this._cursor;
   }
 
   get fullPrefix(): string {

@@ -19,8 +19,7 @@ class Calculator {
   }
 
   hello() {
-    console.log("Hello");
-    
+    xyz
   }
 
   divide(number) {

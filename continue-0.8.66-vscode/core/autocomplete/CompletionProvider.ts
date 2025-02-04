@@ -168,13 +168,6 @@ export class CompletionProvider {
         );
         token = controller.signal;
       }
-      // console.log("Enter here");
-      const repoWindowMaker = new RepoWindowMaker(20, 2);
-      const codeChunks = await repoWindowMaker.buildWindows();
-      for (const codeChunk of codeChunks) {
-        console.log(codeChunk);
-        console.log("================================");
-      }
 
       const [snippetPayload, workspaceDirs] = await Promise.all([
         getAllSnippets({
@@ -185,7 +178,7 @@ export class CompletionProvider {
         }),
         this.ide.getWorkspaceDirs(),
       ]);
-
+      
       const { prompt, prefix, suffix, completionOptions } = renderPrompt({
         snippetPayload,
         workspaceDirs,

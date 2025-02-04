@@ -1,28 +1,28 @@
 import * as vscode from "vscode";
-import {encode} from "gpt-tokenizer";
 
 interface FileMetadata {
     filePath: string;
-    lastModified: Date;
     content: string;
 }
 
-export interface CodeChunk {
+export interface Window {
     code: string;
     metadata: {
         filePath: string;
-        lastModified: Date;
-        lastCached: Date;
         lineNo: number;
         startLineNo: number;
         endLineNo: number;
         windowSize: number;
         sliceSize: number;
     }
-    embedding: any;
 }
 
-async function getFilesMetadata(): Promise<FileMetadata[]> {
+export interface CodeChunk {
+    code: string;
+    metadataList: any;
+}
+
+async function getWorkspaceFiles(): Promise<FileMetadata[]> {
     const filesMetadata: FileMetadata[] = [];
 
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
@@ -33,12 +33,11 @@ async function getFilesMetadata(): Promise<FileMetadata[]> {
     const files = await vscode.workspace.findFiles("**/*");
     for (const file of files) {
         try {
-            const fileStat = await vscode.workspace.fs.stat(file);
+            // @ts-ignore
             const fileContent = await vscode.workspace.fs.readFile(file);
             if (file.fsPath.endsWith(".py") || file.fsPath.endsWith(".java")) {
                 const metadata: FileMetadata = {
                     filePath: file.fsPath,
-                    lastModified: new Date(fileStat.mtime),
                     content: Buffer.from(fileContent).toString("utf8")
                 };
                 filesMetadata.push(metadata);
@@ -55,7 +54,6 @@ async function getFilesMetadata(): Promise<FileMetadata[]> {
                 }
                 const metadata: FileMetadata = {
                     filePath: file.fsPath,
-                    lastModified: new Date(fileStat.mtime),
                     content: sourceCode.join('\n')
                 };
                 filesMetadata.push(metadata);
@@ -83,11 +81,11 @@ export class RepoWindowMaker {
         }
     }
     async setSourceCodeFiles() {
-        this.sourceCodeFiles = await getFilesMetadata();
+        this.sourceCodeFiles = await getWorkspaceFiles();
     }
 
-    buildWindowsForAFile(file: FileMetadata): CodeChunk[] {
-        let codeChunks = [];
+    buildWindowsForAFile(file: FileMetadata): Window[] {
+        let windows = [];
         const codeLines = file.content.split('\n');
         const deltaSize = Math.floor(this.windowSize / 2);
         for (let lineNo = 0; lineNo < codeLines.length; lineNo += this.sliceStep) {
@@ -98,34 +96,48 @@ export class RepoWindowMaker {
                 continue;
             }
             const windowText = windowLines.join('\n');
-            const encoded = encode(windowText);
-            codeChunks.push({
+            windows.push({
                 code: windowText,
                 metadata: {
                     filePath: file.filePath,
-                    lastModified: file.lastModified,
-                    lastCached: file.lastModified, // Temporary for simplicity
                     lineNo: lineNo,
                     startLineNo: startLineNo,
                     endLineNo: endLineNo,
                     windowSize: this.windowSize,
                     sliceSize: this.sliceSize
-                },
-                embedding: encoded
+                }
             });
         }
-        return codeChunks;
+        return windows;
+    }
+
+    mergeWindowsWithSameContext(windows: Window[]): CodeChunk[] {
+        let dict: {[key: string]: any} = {};
+        for (const window of windows) {
+            if (window.code in dict) {
+                dict[window.code].push({...window.metadata});
+            } else {
+                dict[window.code] = [{...window.metadata}];
+            }
+        }
+        let result: CodeChunk[] = [];
+        for (const key in dict) {
+            result.push({
+                code: key,
+                metadataList: dict[key]
+            });
+        }
+        return result;
     }
 
     async buildWindows(): Promise<CodeChunk[]> {
         await this.setSourceCodeFiles();
-        let codeChunks: CodeChunk[] = [];
+        let windows: Window[] = [];
         for (const file of this.sourceCodeFiles) {
             const res = this.buildWindowsForAFile(file);
-            codeChunks = codeChunks.concat(res);
+            windows = windows.concat(res);
         }
-        console.log(codeChunks.length);
-        return codeChunks;
+        return this.mergeWindowsWithSameContext(windows);
     }
 }
 
