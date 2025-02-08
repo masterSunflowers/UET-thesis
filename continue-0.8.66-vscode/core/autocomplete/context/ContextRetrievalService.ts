@@ -76,6 +76,6 @@ export class ContextRetrievalService {
   public async getRepoCoderSnippets(
     helper: HelperVars
   ): Promise<AutocompleteCodeSnippet[]> {
-    return this.repoCoderService.retrieve(helper.cursor, helper.fileLines, helper.filepath, 20);
+    return this.repoCoderService.retrieve(helper.cursor, helper.fileLines, helper.filepath, 10);
   }
 }

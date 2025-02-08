@@ -19,7 +19,7 @@ class Calculator {
   }
 
   hello() {
-    xyz
+    he
   }
 
   divide(number) {

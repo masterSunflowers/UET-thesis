@@ -46,7 +46,7 @@ export const getSnippets = (
     ...payload.clipboardSnippets,
     ...shuffleArray(
       filterSnippetsAlreadyInCaretWindow(
-        [...payload.rootPathSnippets, ...payload.importDefinitionSnippets],
+        [...payload.rootPathSnippets, ...payload.importDefinitionSnippets, ...payload.recentlyEditedRangeSnippets, ...payload.ideSnippets, ...payload.repoCoderSnippets],
         helper.prunedCaretWindow,
       ),
     ),

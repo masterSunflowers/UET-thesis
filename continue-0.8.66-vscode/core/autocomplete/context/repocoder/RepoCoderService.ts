@@ -47,6 +47,16 @@ export class RepoCoderService {
         topKCodeChunks = topKCodeChunks.sort((a, b) => b.simScore - a.simScore);
         topKCodeChunks = topKCodeChunks.slice(0, topK);
         
+        // for (const codeChunk of topKCodeChunks) {
+        //     // console.log(codeChunk.codeChunk.code)
+        //     // console.log("----------");
+        //     // console.log(queryWindow.code);
+        //     // console.log()
+        //     console.log("=>", codeChunk.simScore);
+        //     // console.log("====================================================")
+        // }
+        // console.log("====================================================")
+        
         const codeSnippets = topKCodeChunks.map((codeChunk,_) => {
             const tmp: AutocompleteCodeSnippet = {
                 content: codeChunk.codeChunk.code,
