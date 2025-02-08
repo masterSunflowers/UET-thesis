@@ -5,13 +5,15 @@ import {
     AutocompleteCodeSnippet,
     AutocompleteSnippetType,
 } from "../../snippets/types";
+import { IDE } from "../../..";
+
 
 export class RepoCoderService {
     windowSize = 20;
     sliceSize = 2;
     repoWindowMaker: RepoWindowMaker;
 
-    constructor() {
+    constructor(private readonly ide: IDE) {
         this.repoWindowMaker = new RepoWindowMaker(this.windowSize, this.sliceSize);
     }
 
@@ -46,27 +48,42 @@ export class RepoCoderService {
         }
         topKCodeChunks = topKCodeChunks.sort((a, b) => b.simScore - a.simScore);
         topKCodeChunks = topKCodeChunks.slice(0, topK);
-        
-        // for (const codeChunk of topKCodeChunks) {
-        //     // console.log(codeChunk.codeChunk.code)
-        //     // console.log("----------");
-        //     // console.log(queryWindow.code);
-        //     // console.log()
-        //     console.log("=>", codeChunk.simScore);
-        //     // console.log("====================================================")
-        // }
-        // console.log("====================================================")
-        
-        const codeSnippets = topKCodeChunks.map((codeChunk,_) => {
-            const tmp: AutocompleteCodeSnippet = {
-                content: codeChunk.codeChunk.code,
-                filepath: codeChunk.codeChunk.metadataList[0].filePath,
-                type: AutocompleteSnippetType.Code
-            };
-            return tmp;
-        });
+        const codeSnippets = await Promise.all(
+            topKCodeChunks.map(async (codeChunk,_) => {
+                const rightAfterCodeChunk = await this.makeAnExtendedBlock(codeChunk);
+                return {
+                    content: rightAfterCodeChunk.code,
+                    filepath: rightAfterCodeChunk.metadataList[0].filePath,
+                    type: AutocompleteSnippetType.Code
+                } as AutocompleteCodeSnippet;
+            })
+        );
 
         return codeSnippets;
+    }
+
+    async makeAnExtendedBlock(retrievedCodeChunk: any): Promise<CodeChunk> {
+        const { simScore, codeChunk } = retrievedCodeChunk;
+        const metadata = codeChunk.metadataList;
+        const {filePath, endLineNo, windowSize, sliceSize, lineNo } = metadata[0]
+        const fileContent = await this.ide.readFile(filePath);
+        const fileLines = fileContent.split(/\r?\n/);
+        const newEndLineNo = Math.min(endLineNo + Math.floor(windowSize / sliceSize), fileLines.length);
+        const newStartLineNo = Math.max(0, newEndLineNo - windowSize);
+        const contentLines = fileLines.slice(newStartLineNo, newEndLineNo);
+        const code = contentLines.join("\n");
+        const newMetadata = {
+            filePath: filePath,
+            lineNo: Math.min(lineNo + Math.floor(windowSize / sliceSize), fileLines.length),
+            startLineNo: newStartLineNo,
+            endLineNo: newEndLineNo,
+            windowSize: windowSize,
+            sliceSize: sliceSize
+        }
+        return {
+            code: code,
+            metadataList: [newMetadata]
+        }
     }
 
 }

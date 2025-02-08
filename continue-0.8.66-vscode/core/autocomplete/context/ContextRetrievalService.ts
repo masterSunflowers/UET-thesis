@@ -20,7 +20,7 @@ export class ContextRetrievalService {
       this.importDefinitionsService,
       this.ide,
     );
-    this.repoCoderService = new RepoCoderService();
+    this.repoCoderService = new RepoCoderService(this.ide);
   }
 
   public async getSnippetsFromImportDefinitions(

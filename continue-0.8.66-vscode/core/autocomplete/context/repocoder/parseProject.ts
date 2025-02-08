@@ -140,26 +140,3 @@ export class RepoWindowMaker {
         return this.mergeWindowsWithSameContext(windows);
     }
 }
-
-// export async function cacheRepoWindow(context: vscode.ExtensionContext) {
-//     const repoWindowMaker = new RepoWindowMaker(20, 2);
-//     const codeChunks = await repoWindowMaker.buildWindows();
-
-//     if (codeChunks.length === 0) {
-//         vscode.window.showInformationMessage("No files to save.");
-//         return;
-//     }
-
-//     const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-//     if (!workspaceFolder) {
-//         vscode.window.showErrorMessage("No workspace folder is open.");
-//         return;
-//     }
-//     const cacheName = "zerodev";
-//     try {
-//         await context.workspaceState.update(cacheName, codeChunks);
-//         console.log("Saved project");
-//     } catch (err: any) {
-//         vscode.window.showErrorMessage(`Failed to save project file metadata`);
-//     }
-// }
