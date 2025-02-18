@@ -184,9 +184,10 @@ export class CompletionProvider {
         workspaceDirs,
         helper,
       });
-      // console.log("Prompt");
-      // console.log(prompt);
-      // console.log("==========================================================")
+
+      console.log("Prompt:");
+      console.log(prompt);
+      console.log("==========================================================")
       // Completion
       let completion: string | undefined = "";
 

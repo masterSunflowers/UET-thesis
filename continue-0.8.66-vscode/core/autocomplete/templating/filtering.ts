@@ -41,15 +41,43 @@ export const getSnippets = (
   helper: HelperVars,
   payload: SnippetPayload,
 ): AutocompleteSnippet[] => {
+  for (let i = 0; i < payload.diffSnippets.length; i++) {
+    payload.diffSnippets[i].content = "===DIFF===\n" + payload.diffSnippets[i].content
+  }
+  for (let i = 0; i < payload.clipboardSnippets.length; i++) {
+    payload.clipboardSnippets[i].content = "===CLIPBOARD===\n" + payload.clipboardSnippets[i].content
+  }
+  for (let i = 0; i < payload.rootPathSnippets.length; i++) {
+    payload.rootPathSnippets[i].content = "===ROOTPATH===\n" + payload.rootPathSnippets[i].content
+  }
+  for (let i = 0; i < payload.importDefinitionSnippets.length; i++) {
+    payload.importDefinitionSnippets[i].content = "===IMPORT===\n" + payload.importDefinitionSnippets[i].content
+  }
+  for (let i = 0; i < payload.recentlyEditedRangeSnippets.length; i++) {
+    payload.recentlyEditedRangeSnippets[i].content = "===RECENTLY===\n" + payload.recentlyEditedRangeSnippets[i].content
+  }
+  for (let i = 0; i < payload.ideSnippets.length; i++) {
+    payload.ideSnippets[i].content = "===CALL===\n" + payload.ideSnippets[i].content
+  }
+  for (let i = 0; i < payload.repoCoderSnippets.length; i++) {
+    payload.repoCoderSnippets[i].content = "===SIMILAR===\n" + payload.repoCoderSnippets[i].content
+  }
+
   const snippets = [
-    ...payload.diffSnippets,
-    ...payload.clipboardSnippets,
     ...shuffleArray(
       filterSnippetsAlreadyInCaretWindow(
-        [...payload.rootPathSnippets, ...payload.importDefinitionSnippets, ...payload.recentlyEditedRangeSnippets, ...payload.ideSnippets, ...payload.repoCoderSnippets],
+        [ ...payload.rootPathSnippets, 
+          ...payload.importDefinitionSnippets,
+          ...payload.recentlyEditedRangeSnippets,
+          ...payload.ideSnippets,
+          ...payload.repoCoderSnippets
+        ],
         helper.prunedCaretWindow,
       ),
+
     ),
+    ...payload.diffSnippets,
+    ...payload.clipboardSnippets,
   ];
 
   const finalSnippets = [];

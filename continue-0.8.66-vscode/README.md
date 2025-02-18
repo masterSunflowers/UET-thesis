@@ -10,6 +10,11 @@ Will be added soon
 
 - If the Java project has multiple function with the same name within a file, the gotoDefinition function will return the first function that Language Server has parsed
 
+# Note
+
+- The base implementation don't sort the similarity of retrieval code to the complete window (may be because it only retrieves definition of class, function. So there is no need to do that)
+
+- Sliding window size (~500 characters)
 # Continue
 
 <div align="center">

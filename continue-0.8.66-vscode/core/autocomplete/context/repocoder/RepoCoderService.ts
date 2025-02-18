@@ -9,7 +9,7 @@ import { IDE } from "../../..";
 
 
 export class RepoCoderService {
-    windowSize = 20;
+    windowSize = 10;
     sliceSize = 2;
     repoWindowMaker: RepoWindowMaker;
 

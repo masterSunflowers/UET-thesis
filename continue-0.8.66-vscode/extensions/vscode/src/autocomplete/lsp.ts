@@ -203,17 +203,36 @@ async function crawlTypes(
   return results;
 }
 
+async function getWindowArround(filePath: string, range: Range, windowSize: number, ide: IDE) {
+  const startLine = range.start.line;
+  const endLine = range.end.line;
+  const fileContent = await ide.readFile(filePath);
+  const fileLines = fileContent.split(/\r?\n/);
+
+  const numExtendLines = windowSize - (endLine - startLine + 1);
+  const numPrefixLines = Math.min(startLine, Math.floor(numExtendLines / 2));
+  
+  const newStartLineNo = startLine - numPrefixLines;
+  const newEndLineNo = Math.min(fileLines.length, newStartLineNo + windowSize);
+  
+  const content = fileLines.slice(newStartLineNo, newEndLineNo).join("\n");
+  return {
+    filepath: filePath,
+    content: content
+  }
+}
+
 export async function getDefinitionsForNode(
   uri: string,
   node: Parser.SyntaxNode,
   ide: IDE,
   lang: AutocompleteLanguageInfo,
-): Promise<RangeInFileWithContents[]> {
+): Promise<any> {
   const ranges: (RangeInFile | RangeInFileWithContents)[] = [];
   switch (node.type) {
-    case "call_expression":     // typescript 
-    case "method_invocation":   // java
-    case "call":                // python
+    case "call_expression":     // function call typescript 
+    case "method_invocation":   // function call java
+    case "call":                // function callpython
     {
       const [funcDef] = await executeGotoProvider({
         uri,
@@ -225,18 +244,21 @@ export async function getDefinitionsForNode(
         return [];
       }
 
-      
       // funcDef: filepath, range
       const funcUsages = await executeGotoProvider({
         uri: funcDef.filepath,
         line: funcDef.range.end.line,
         character: funcDef.range.end.character,
         name: "vscode.executeReferenceProvider"
-      })
+      });
 
       for (const funcUsage of funcUsages) {
-        console.log(funcUsage)
-        console.log("===========")
+        const window = await getWindowArround(funcUsage.filepath, funcUsage.range, 10, ide);
+        ranges.push({
+          filepath: window.filepath,
+          contents: window.content,
+          range: funcUsage.range
+        });
       }
       
     }
@@ -251,66 +273,44 @@ export async function getDefinitionsForNode(
     case "object_creation_expression":
     case "call":
     {
-      // In 'new MyClass(...)', "MyClass" is the classNameNode
-      const classNameNode = node.children.find(
-        (child) => child.type === "identifier",
-      );
-      const [classDef] = await executeGotoProvider({
-        uri,
-        line: (classNameNode ?? node).endPosition.row,
-        character: (classNameNode ?? node).endPosition.column,
-        name: "vscode.executeDefinitionProvider",
-      });
-      if (!classDef) {
-        break;
-      }
-      const contents = await ide.readRangeInFile(
-        classDef.filepath,
-        classDef.range,
-      );
+      // // In 'new MyClass(...)', "MyClass" is the classNameNode
+      // const classNameNode = node.children.find(
+      //   (child) => child.type === "identifier",
+      // );
+      // const [classDef] = await executeGotoProvider({
+      //   uri,
+      //   line: (classNameNode ?? node).endPosition.row,
+      //   character: (classNameNode ?? node).endPosition.column,
+      //   name: "vscode.executeDefinitionProvider",
+      // });
+      // if (!classDef) {
+      //   break;
+      // }
+      // const contents = await ide.readRangeInFile(
+      //   classDef.filepath,
+      //   classDef.range,
+      // );
 
-      ranges.push({
-        ...classDef,
-        contents: `${
-          classNameNode?.text
-            ? `${lang.singleLineComment} ${classNameNode.text}:\n`
-            : ""
-        }${contents.trim()}`,
-      });
+      // ranges.push({
+      //   ...classDef,
+      //   contents: `${
+      //     classNameNode?.text
+      //       ? `${lang.singleLineComment} ${classNameNode.text}:\n`
+      //       : ""
+      //   }${contents.trim()}`,
+      // });
 
-      const definitions = await crawlTypes({ ...classDef, contents }, ide);
-      ranges.push(...definitions.filter(Boolean));
+      // const definitions = await crawlTypes({ ...classDef, contents }, ide);
+      // ranges.push(...definitions.filter(Boolean));
 
-      break;
+      // break;
     }
     case "":
       // function definition -> implementations?
       break;
   }
-  return await Promise.all(
-    ranges.map(async (rif) => {
-      // Convert the VS Code Range type to ours
-      const range: Range = {
-        start: {
-          line: rif.range.start.line,
-          character: rif.range.start.character,
-        },
-        end: {
-          line: rif.range.end.line,
-          character: rif.range.end.character,
-        },
-      };
-      rif.range = range;
-
-      if (!isRifWithContents(rif)) {
-        return {
-          ...rif,
-          contents: await ide.readRangeInFile(rif.filepath, rif.range),
-        };
-      }
-      return rif;
-    }),
-  );
+  console.log(ranges);
+  return ranges;
 }
 
 /**
