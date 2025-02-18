@@ -6,6 +6,12 @@ This is the souce code of my thesis at University of Engineering and Technology 
 
 Will be added soon
 
+# Known issues
+
+- If the Java project has multiple function with the same name within a file, the gotoDefinition function will return the first function that Language Server has parsed
+
+# Continue
+
 <div align="center">
 
 ![Continue logo](media/readme.png)
