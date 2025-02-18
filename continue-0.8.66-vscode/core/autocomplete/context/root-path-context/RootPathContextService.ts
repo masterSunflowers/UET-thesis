@@ -79,7 +79,6 @@ export class RootPathContextService {
   ): Promise<AutocompleteSnippetDeprecated[]> {
     const snippets: AutocompleteSnippetDeprecated[] = [];
     const language = getFullLanguageName(filepath);
-
     let query: Parser.Query | undefined;
     switch (node.type) {
       case "program":
@@ -164,6 +163,7 @@ export class RootPathContextService {
       RootPathContextService.TYPES_TO_USE.has(node.type),
     )) {
       const key = RootPathContextService.keyFromNode(parentKey, astNode);
+      
       // const type = astNode.type;
       // debugger;
 

@@ -29,6 +29,7 @@ export class ImportDefinitionsService {
     return this.cache.get(filepath);
   }
 
+  // This is implementation to get information of imported object to a file (functions, classes)
   private async _getFileInfo(filepath: string): Promise<FileInfo | null> {
     if (filepath.endsWith(".ipynb")) {
       // Commenting out this line was the solution to https://github.com/continuedev/continue/issues/1463
@@ -50,6 +51,8 @@ export class ImportDefinitionsService {
       return null;
     }
 
+    // Use tree-sitter to parse only 10000 first characters of a file or first 100 rows
+    // because import sentence normally is at the beginning of a file.
     const ast = parser.parse(fileContents, undefined, {
       includedRanges: [
         {
@@ -80,11 +83,20 @@ export class ImportDefinitionsService {
       const startPosition = match.captures[0].node.startPosition;
       const defs = await this.ide.gotoDefinition({
         filepath,
-        position: {
+        position: { 
           line: startPosition.row,
           character: startPosition.column,
         },
       });
+
+      for (const def of defs) {
+        console.log("A definition:");
+        console.log(def.filepath);
+        console.log(def.range.start.line, def.range.start.character);
+        console.log(def.range.end.line, def.range.end.character);
+        console.log("============")
+      }
+
       fileInfo.imports[match.captures[0].node.text] = await Promise.all(
         defs.map(async (def) => ({
           ...def,

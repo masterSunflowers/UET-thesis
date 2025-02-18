@@ -211,60 +211,34 @@ export async function getDefinitionsForNode(
 ): Promise<RangeInFileWithContents[]> {
   const ranges: (RangeInFile | RangeInFileWithContents)[] = [];
   switch (node.type) {
-    case "call_expression": {
-      // function call -> function definition
-      const [funDef] = await executeGotoProvider({
+    case "call_expression":     // typescript 
+    case "method_invocation":   // java
+    case "call":                // python
+    {
+      const [funcDef] = await executeGotoProvider({
         uri,
         line: node.startPosition.row,
         character: node.startPosition.column,
         name: "vscode.executeDefinitionProvider",
       });
-      if (!funDef) {
+      if (!funcDef) {
         return [];
       }
 
-      // Don't display a function of more than 15 lines
-      // We can of course do something smarter here eventually
-      let funcText = await ide.readRangeInFile(funDef.filepath, funDef.range);
-      if (funcText.split("\n").length > 15) {
-        let truncated = false;
-        const funRootAst = await getAst(funDef.filepath, funcText);
-        if (funRootAst) {
-          const [funNode] = findChildren(
-            funRootAst?.rootNode,
-            (node) => FUNCTION_DECLARATION_NODE_TYPEs.includes(node.type),
-            1,
-          );
-          if (funNode) {
-            const [statementBlockNode] = findChildren(
-              funNode,
-              (node) => FUNCTION_BLOCK_NODE_TYPES.includes(node.type),
-              1,
-            );
-            if (statementBlockNode) {
-              funcText = funRootAst.rootNode.text
-                .slice(0, statementBlockNode.startIndex)
-                .trim();
-              truncated = true;
-            }
-          }
-        }
-        if (!truncated) {
-          funcText = funcText.split("\n")[0];
-        }
+      
+      // funcDef: filepath, range
+      const funcUsages = await executeGotoProvider({
+        uri: funcDef.filepath,
+        line: funcDef.range.end.line,
+        character: funcDef.range.end.character,
+        name: "vscode.executeReferenceProvider"
+      })
+
+      for (const funcUsage of funcUsages) {
+        console.log(funcUsage)
+        console.log("===========")
       }
-
-      ranges.push(funDef);
-
-      const typeDefs = await crawlTypes(
-        {
-          ...funDef,
-          contents: funcText,
-        },
-        ide,
-      );
-      ranges.push(...typeDefs);
-      break;
+      
     }
     case "variable_declarator":
       // variable assignment -> variable definition/type
@@ -274,6 +248,9 @@ export async function getDefinitionsForNode(
       // impl of trait -> trait definition
       break;
     case "new_expression":
+    case "object_creation_expression":
+    case "call":
+    {
       // In 'new MyClass(...)', "MyClass" is the classNameNode
       const classNameNode = node.children.find(
         (child) => child.type === "identifier",
@@ -305,6 +282,7 @@ export async function getDefinitionsForNode(
       ranges.push(...definitions.filter(Boolean));
 
       break;
+    }
     case "":
       // function definition -> implementations?
       break;

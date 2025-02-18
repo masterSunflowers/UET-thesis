@@ -13,7 +13,7 @@ import {
 } from "core/util/paths";
 import * as vscode from "vscode";
 
-import { executeGotoProvider } from "./autocomplete/lsp";
+import { executeGotoProvider} from "./autocomplete/lsp";
 import { DiffManager } from "./diff/horizontal";
 import { Repository } from "./otherExtensions/git";
 import { VsCodeIdeUtils } from "./util/ideUtils";

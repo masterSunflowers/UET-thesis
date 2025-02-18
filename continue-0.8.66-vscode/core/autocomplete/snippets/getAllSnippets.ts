@@ -21,7 +21,7 @@ export interface SnippetPayload {
 
 function racePromise<T>(promise: Promise<T[]>): Promise<T[]> {
   const timeoutPromise = new Promise<T[]>((resolve) => {
-    setTimeout(() => resolve([]), 100);
+    setTimeout(() => resolve([]), 5000);
   });
 
   return Promise.race([promise, timeoutPromise]);
@@ -107,26 +107,36 @@ export const getAllSnippets = async ({
   getDefinitionsFromLsp: GetLspDefinitionsFunction;
   contextRetrievalService: ContextRetrievalService;
 }): Promise<SnippetPayload> => {
+  // Reuse recently edit snippets of Continue
   const recentlyEditedRangeSnippets =
     getSnippetsFromRecentlyEditedRanges(helper);
 
+  // Reuse diff snippets, clipboard snippets of Continue
+  
+  // I believe that, the root path snippets that have retrieved by Continue's 
+  // way is nonsense and do not support generation process, I need to check if this
+  // observation is true
+
+  // I changed the impl
   const [
-    rootPathSnippets,
-    importDefinitionSnippets,
+    // rootPathSnippets,
+    // importDefinitionSnippets,
     ideSnippets,
-    diffSnippets,
+    diffSnippets,                 
     clipboardSnippets,
     repoCoderSnippets
   ] = await Promise.all([
-    racePromise(contextRetrievalService.getRootPathSnippets(helper)),
-    racePromise(
-      contextRetrievalService.getSnippetsFromImportDefinitions(helper),
-    ),
+    // racePromise(contextRetrievalService.getRootPathSnippets(helper)),
+    // racePromise(
+    //   contextRetrievalService.getSnippetsFromImportDefinitions(helper),
+    // ),
     racePromise(getIdeSnippets(helper, ide, getDefinitionsFromLsp)),
     racePromise(getDiffSnippets(ide)),
     racePromise(getClipboardSnippets(ide)),
     contextRetrievalService.getRepoCoderSnippets(helper)
   ]);
+  const rootPathSnippets: AutocompleteCodeSnippet[] = [];
+  const importDefinitionSnippets: AutocompleteCodeSnippet[] = [];
 
   return {
     rootPathSnippets,

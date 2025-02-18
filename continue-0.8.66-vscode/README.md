@@ -1,3 +1,11 @@
+# Introduction
+
+This is the souce code of my thesis at University of Engineering and Technology (VNU). I leverage Continue (a open source project - Code assistant Extension for IDE like VSCode and Jetbrain's products). I develop my self research and improvement upon source code base.
+
+# Details
+
+Will be added soon
+
 <div align="center">
 
 ![Continue logo](media/readme.png)
