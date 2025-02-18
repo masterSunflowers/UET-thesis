@@ -1,11 +1,11 @@
 import { encode } from "gpt-tokenizer";
-import { RepoWindowMaker, Window, CodeChunk } from "./parseProject";
-import { Position } from "../../..";
+import { RepoWindowMaker, Window, CodeChunk } from "./chunking/parseProject";
+import { Position } from "../..";
 import {
     AutocompleteCodeSnippet,
     AutocompleteSnippetType,
-} from "../../snippets/types";
-import { IDE } from "../../..";
+} from "../snippets/types";
+import { IDE } from "../..";
 
 
 export class RepoCoderService {

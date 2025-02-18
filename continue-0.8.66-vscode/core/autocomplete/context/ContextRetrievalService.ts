@@ -7,8 +7,8 @@ import { HelperVars } from "../util/HelperVars";
 
 import { ImportDefinitionsService } from "./ImportDefinitionsService";
 import { getSymbolsForSnippet } from "./ranking";
-import { RootPathContextService } from "./root-path-context/RootPathContextService";
-import { RepoCoderService } from "./repocoder/RepoCoderService"; 
+import { RootPathContextService } from "./RootPathContextService";
+import { RepoCoderService } from "../RepoCoderService"; 
 export class ContextRetrievalService {
   private importDefinitionsService: ImportDefinitionsService;
   private rootPathContextService: RootPathContextService;

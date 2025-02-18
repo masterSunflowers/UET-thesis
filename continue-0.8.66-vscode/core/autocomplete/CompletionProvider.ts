@@ -21,7 +21,7 @@ import { AutocompleteLoggingService } from "./util/AutocompleteLoggingService.js
 import AutocompleteLruCache from "./util/AutocompleteLruCache.js";
 import { HelperVars } from "./util/HelperVars.js";
 import { AutocompleteInput, AutocompleteOutcome } from "./util/types.js";
-import { RepoWindowMaker } from "./context/repocoder/parseProject.js"
+import { RepoWindowMaker } from "./context/chunking/parseProject.js"
 
 const autocompleteCache = AutocompleteLruCache.get();
 
