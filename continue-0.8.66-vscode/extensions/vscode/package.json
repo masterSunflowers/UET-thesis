@@ -1,7 +1,7 @@
 {
-  "name": "continue-uet",
+  "name": "continue",
   "icon": "media/icon.png",
-  "author": "Continue Dev, Inc / masterSunflowers",
+  "author": "Continue Dev, Inc; masterSunflowers",
   "version": "1.0.0",
   "repository": {
     "type": "git",
@@ -12,73 +12,16 @@
     "workspace"
   ],
   "bugs": {
-    "url": "https://github.com/masterSunflowers/UET-thesis/issues",
+    "url": "https://github.com/masterSunflowers/UET-thesis",
     "email": "21020476@vnu.edu.vn"
   },
   "homepage": "",
-  "properties": {
-    "continue.telemetryEnabled": {
-      "type": "boolean",
-      "default": true,
-      "markdownDescription": "Continue collects anonymous usage data, cleaned of PII, to help us improve the product for our users. Read more  at [continue.dev › Telemetry](https://docs.continue.dev/telemetry)."
-    },
-    "continue.enableContinueForTeams": {
-      "type": "boolean",
-      "default": false,
-      "markdownDescription": "Enable Continue for teams beta features. To sign in, click the person icon in the bottom right of the sidebar."
-    },
-    "continue.showInlineTip": {
-      "type": "boolean",
-      "default": true,
-      "description": "Show inline suggestion to use the Continue keyboard shortcuts (e.g. \"Cmd/Ctrl L to select code, Cmd/Ctrl I to edit\")."
-    },
-    "continue.enableQuickActions": {
-      "type": "boolean",
-      "default": false,
-      "markdownDescription": "Enable the experimental Quick Actions feature. Read our walkthrough to learn about configuration and how to share feedback: [continue.dev › Walkthrough: Quick Actions (experimental)](https://docs.continue.dev/features/quick-actions)"
-    },
-    "continue.enableTabAutocomplete": {
-      "type": "boolean",
-      "default": true,
-      "markdownDescription": "Enable Continue's tab autocomplete feature. Read our walkthrough to learn about configuration and how to share feedback: [continue.dev › Walkthrough: Tab Autocomplete (beta)](https://docs.continue.dev/features/tab-autocomplete)"
-    },
-    "continue.pauseTabAutocompleteOnBattery": {
-      "type": "boolean",
-      "default": false,
-      "markdownDescription": "Pause Continue's tab autocomplete feature when your battery is low."
-    },
-    "continue.pauseCodebaseIndexOnStart": {
-      "type": "boolean",
-      "default": false,
-      "markdownDescription": "Pause Continue's codebase index on start."
-    },
-    "continue.enableDebugLogs": {
-      "type": "boolean",
-      "default": false,
-      "markdownDescription": "Enable Continue Debug Logs in the Output panel."
-    },
-    "continue.remoteConfigServerUrl": {
-      "type": "string",
-      "default": null,
-      "markdownDescription": "If your team is set up to use shared configuration, enter the server URL here and your user token below to enable automatic syncing."
-    },
-    "continue.userToken": {
-      "type": "string",
-      "default": null,
-      "markdownDescription": "If your team is set up to use shared configuration, enter your user token here and your server URL above to enable automatic syncing."
-    },
-    "continue.remoteConfigSyncPeriod": {
-      "type": "number",
-      "default": 60,
-      "description": "The period of time in minutes between automatic syncs."
-    }
-  }",
-  "qna": "",
+  "qna":"",
   "license": "Apache-2.0",
   "displayName": "Continue-UET",
   "pricing": "Free",
-  "description": "UET thesis",
-  "publisher": "mastersunflowers",
+  "description": "Phương pháp tự động hoàn thiện mã nguồn cấp độ dự án dựa trên Tạo sinh tăng cường truy xuất",
+  "publisher": "masterSunflowers",
   "engines": {
     "vscode": "^1.70.0",
     "node": ">=20.11.0"
@@ -118,10 +61,6 @@
       {
         "id": "continue",
         "label": "Continue"
-      },
-      {
-        "id": "masterSunflowers",
-        "label": "masterSunflowers"
       }
     ],
     "languages": [
