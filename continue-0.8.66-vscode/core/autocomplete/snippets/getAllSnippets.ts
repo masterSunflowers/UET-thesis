@@ -21,7 +21,7 @@ export interface SnippetPayload {
 
 function racePromise<T>(promise: Promise<T[]>): Promise<T[]> {
   const timeoutPromise = new Promise<T[]>((resolve) => {
-    setTimeout(() => resolve([]), 5000);
+    setTimeout(() => resolve([]), 200);
   });
 
   return Promise.race([promise, timeoutPromise]);
@@ -117,7 +117,7 @@ export const getAllSnippets = async ({
   // way is nonsense and do not support generation process, I need to check if this
   // observation is true
 
-  // I changed the impl
+  // I changed the implementation of ide snippets
   const [
     // rootPathSnippets,
     // importDefinitionSnippets,

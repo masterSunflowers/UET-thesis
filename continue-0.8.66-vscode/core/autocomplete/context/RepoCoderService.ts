@@ -28,14 +28,15 @@ export class RepoCoderService {
     async retrieve(cursor: Position, fileLines: string[], currentFilePath: string, topK: number): Promise<AutocompleteCodeSnippet[]> {
         const cursorLine = cursor.line;
         const startLineNo = Math.max(0, cursorLine - Math.floor(this.windowSize / 2));
-        const windowLines = fileLines.slice(startLineNo, cursorLine)
+        const endLineNo = Math.min(fileLines.length, startLineNo + this.windowSize);
+        const windowLines = fileLines.slice(startLineNo, endLineNo)
         const queryWindow: Window = {
             code: windowLines.join("\n"),
             metadata: {
                 filePath: currentFilePath,
                 lineNo: cursorLine,
                 startLineNo: startLineNo,
-                endLineNo: cursorLine,
+                endLineNo: endLineNo,
                 windowSize: this.windowSize,
                 sliceSize: this.sliceSize
             }
@@ -50,10 +51,15 @@ export class RepoCoderService {
         topKCodeChunks = topKCodeChunks.slice(0, topK);
         const codeSnippets = await Promise.all(
             topKCodeChunks.map(async (codeChunk,_) => {
-                const rightAfterCodeChunk = await this.makeAnExtendedBlock(codeChunk);
+                // const rightAfterCodeChunk = await this.makeAnExtendedBlock(codeChunk);
+                // return {
+                //     content: rightAfterCodeChunk.code,
+                //     filepath: rightAfterCodeChunk.metadataList[0].filePath,
+                //     type: AutocompleteSnippetType.Code
+                // } as AutocompleteCodeSnippet;
                 return {
-                    content: rightAfterCodeChunk.code,
-                    filepath: rightAfterCodeChunk.metadataList[0].filePath,
+                    content: codeChunk.codeChunk.code,
+                    filepath: codeChunk.codeChunk.metadataList[0].filePath,
                     type: AutocompleteSnippetType.Code
                 } as AutocompleteCodeSnippet;
             })
@@ -62,6 +68,7 @@ export class RepoCoderService {
         return codeSnippets;
     }
 
+    // Needed when we want to extend the code chunk to the right, but here we don't need it.
     async makeAnExtendedBlock(retrievedCodeChunk: any): Promise<CodeChunk> {
         const { simScore, codeChunk } = retrievedCodeChunk;
         const metadata = codeChunk.metadataList;

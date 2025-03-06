@@ -3,7 +3,6 @@ import { TRIAL_FIM_MODEL } from "../config/onboarding.js";
 import { IDE, ILLM } from "../index.js";
 import OpenAI from "../llm/llms/OpenAI.js";
 import { DEFAULT_AUTOCOMPLETE_OPTS } from "../util/parameters.js";
-import { PosthogFeatureFlag, Telemetry } from "../util/posthog.js";
 
 import { shouldCompleteMultiline } from "./classification/shouldCompleteMultiline.js";
 import { ContextRetrievalService } from "./context/ContextRetrievalService.js";
@@ -21,7 +20,6 @@ import { AutocompleteLoggingService } from "./util/AutocompleteLoggingService.js
 import AutocompleteLruCache from "./util/AutocompleteLruCache.js";
 import { HelperVars } from "./util/HelperVars.js";
 import { AutocompleteInput, AutocompleteOutcome } from "./util/types.js";
-import { RepoWindowMaker } from "./context/chunking/parseProject.js"
 
 const autocompleteCache = AutocompleteLruCache.get();
 
@@ -185,9 +183,8 @@ export class CompletionProvider {
         helper,
       });
 
-      console.log("Prompt:");
-      console.log(prompt);
-      console.log("==========================================================")
+      console.log("Prompt:", prompt);
+      console.log("====================================================")
       // Completion
       let completion: string | undefined = "";
 
@@ -259,7 +256,6 @@ export class CompletionProvider {
         ...helper.options,
       };
 
-      //////////
 
       // Save to cache
       if (!outcome.cacheHit && helper.options.useCache) {

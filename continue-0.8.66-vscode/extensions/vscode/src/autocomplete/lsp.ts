@@ -218,7 +218,17 @@ async function getWindowArround(filePath: string, range: Range, windowSize: numb
   const content = fileLines.slice(newStartLineNo, newEndLineNo).join("\n");
   return {
     filepath: filePath,
-    content: content
+    content: content,
+    range: {
+      start: {
+        line: newStartLineNo,
+        character: 0,
+      },
+      end: {
+        line: newEndLineNo,
+        character: 0
+      },
+    },
   }
 }
 
@@ -232,7 +242,7 @@ export async function getDefinitionsForNode(
   switch (node.type) {
     case "call_expression":     // function call typescript 
     case "method_invocation":   // function call java
-    case "call":                // function callpython
+    case "call":                // function call python
     {
       const [funcDef] = await executeGotoProvider({
         uri,
@@ -253,11 +263,12 @@ export async function getDefinitionsForNode(
       });
 
       for (const funcUsage of funcUsages) {
+        // Get window around the usage of the function
         const window = await getWindowArround(funcUsage.filepath, funcUsage.range, 10, ide);
         ranges.push({
           filepath: window.filepath,
           contents: window.content,
-          range: funcUsage.range
+          range: window.range
         });
       }
       
@@ -269,10 +280,12 @@ export async function getDefinitionsForNode(
     case "impl_item":
       // impl of trait -> trait definition
       break;
-    case "new_expression":
-    case "object_creation_expression":
-    case "call":
+    case "new_expression":              // object creation java
+    case "object_creation_expression":  // object creation java
+    case "call":                        // object creation python
     {
+      console.log("Current node:")
+      console.log(node)
       // // In 'new MyClass(...)', "MyClass" is the classNameNode
       // const classNameNode = node.children.find(
       //   (child) => child.type === "identifier",
@@ -309,7 +322,6 @@ export async function getDefinitionsForNode(
       // function definition -> implementations?
       break;
   }
-  console.log(ranges);
   return ranges;
 }
 

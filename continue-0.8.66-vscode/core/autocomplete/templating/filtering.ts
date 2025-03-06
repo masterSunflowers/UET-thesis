@@ -62,6 +62,7 @@ export const getSnippets = (
   for (let i = 0; i < payload.repoCoderSnippets.length; i++) {
     payload.repoCoderSnippets[i].content = "===SIMILAR===\n" + payload.repoCoderSnippets[i].content
   }
+  
 
   const snippets = [
     ...shuffleArray(

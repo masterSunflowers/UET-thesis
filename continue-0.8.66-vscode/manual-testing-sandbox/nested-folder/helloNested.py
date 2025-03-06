@@ -8,6 +8,7 @@ def main(a: Vector):
 
 
 class MyClass:
+    def __init__(se)
     def test(a: Vector) -> Vector:
         return a
 

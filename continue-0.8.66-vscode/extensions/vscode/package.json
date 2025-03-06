@@ -1,27 +1,27 @@
 {
   "name": "continue",
   "icon": "media/icon.png",
-  "author": "Continue Dev, Inc; masterSunflowers",
-  "version": "1.0.0",
+  "author": "Continue Dev, Inc",
+  "version": "0.8.66",
   "repository": {
     "type": "git",
-    "url": "https://github.com/masterSunflowers/UET-thesis"
+    "url": "https://github.com/continuedev/continue"
   },
   "extensionKind": [
     "ui",
     "workspace"
   ],
   "bugs": {
-    "url": "https://github.com/masterSunflowers/UET-thesis",
-    "email": "21020476@vnu.edu.vn"
+    "url": "https://github.com/continuedev/continue/issues",
+    "email": "nate@continue.dev"
   },
-  "homepage": "",
-  "qna":"",
+  "homepage": "https://continue.dev",
+  "qna": "https://github.com/continuedev/continue/issues/new/choose",
   "license": "Apache-2.0",
-  "displayName": "Continue-UET",
+  "displayName": "Continue - Codestral, Claude, and more",
   "pricing": "Free",
-  "description": "Phương pháp tự động hoàn thiện mã nguồn cấp độ dự án dựa trên Tạo sinh tăng cường truy xuất",
-  "publisher": "masterSunflowers",
+  "description": "The leading open-source AI code assistant",
+  "publisher": "Continue",
   "engines": {
     "vscode": "^1.70.0",
     "node": ">=20.11.0"
