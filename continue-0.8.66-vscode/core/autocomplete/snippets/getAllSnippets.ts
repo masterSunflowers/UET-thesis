@@ -9,7 +9,7 @@ import {
   AutocompleteSnippetType,
 } from "./types";
 
-export interface SnippetPayload {
+export interface SnippetPayload { 
   rootPathSnippets: AutocompleteCodeSnippet[];
   importDefinitionSnippets: AutocompleteCodeSnippet[];
   ideSnippets: AutocompleteCodeSnippet[];

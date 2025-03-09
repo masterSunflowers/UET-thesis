@@ -184,7 +184,7 @@ export class CompletionProvider {
       });
 
       console.log("Prompt:", prompt);
-      console.log("====================================================")
+      console.log("====================================================");
       // Completion
       let completion: string | undefined = "";
 

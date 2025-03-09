@@ -38,4 +38,8 @@ class Calculator {
     this.result = 0;
     return this;
   }
+
+  hi_there() {
+    total = this.add(10).subtract(5).multiply(2).divide(4).getResult();
+  }
 }

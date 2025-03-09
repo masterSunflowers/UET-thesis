@@ -319,7 +319,6 @@ export async function getDefinitionsForNode(
       // break;
     }
     case "":
-      // function definition -> implementations?
       break;
   }
   return ranges;

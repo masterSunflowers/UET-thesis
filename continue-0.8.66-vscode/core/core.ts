@@ -807,6 +807,7 @@ export class Core {
   }
 
   private indexingCancellationController: AbortController | undefined;
+  
   private async sendIndexingErrorTelemetry(update: IndexingProgressUpdate) {
     console.debug(
       "Indexing failed with error: ",

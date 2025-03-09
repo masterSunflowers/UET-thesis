@@ -8,9 +8,14 @@ def main(a: Vector):
 
 
 class MyClass:
-    def __init__(se)
+    def __init__(self):
+        pass
+
     def test(a: Vector) -> Vector:
         return a
 
+    def sort_func(self, a: Vector) -> Vector:
+        return sorted(a)
+        
 
 raise Exception("This is an error")
