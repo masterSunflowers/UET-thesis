@@ -8,6 +8,7 @@ import { IDE } from "../..";
 import { LlamaAsyncEncoder } from "../../llm/asyncEncoder";
 import { SqliteDb, DatabaseConnection } from "../../indexing/refreshIndex";
 import { jaccardSimilarity } from "./ranking";
+import { getWindowArroundCursor } from "./ranking";
 
 export class SimilarCodeContextService {
     // I hashcode here for the early development stage, 128 is the max chunk size when Continue indexing (chunking code) for default
@@ -20,39 +21,11 @@ export class SimilarCodeContextService {
         this.ide = ide;
     }
 
-    async buildRetrieveQuery(cursor: Position, fileLines: string[]): Promise<string> {
-        // Recursive extend to two sides to reach `maxChunkSize`
-        let startLineNo = cursor.line;
-        let endLineNo = cursor.line + 1;
-        let queryText = "";
-        while (startLineNo >= 0 && endLineNo <= fileLines.length) {
-            queryText = fileLines.slice(startLineNo, endLineNo).join("\n");
-            const encodedQueryText = await this.llamaTokenizer.encode(queryText);
-            if (encodedQueryText.length > this.maxChunkSize) {
-                break;
-            }
-            startLineNo--;
-            endLineNo++;
-        }
-        queryText = fileLines.slice(startLineNo + 1, endLineNo - 1).join("\n");
-        while (true) {
-            const encodedQueryText = await this.llamaTokenizer.encode(queryText);
-            if (encodedQueryText.length >= this.maxChunkSize || startLineNo < 0) break;
-            queryText = fileLines[startLineNo] + "\n" + queryText;
-            startLineNo--;
-        }
-        while (true) {
-            const encodedQueryText = await this.llamaTokenizer.encode(queryText);
-            if (encodedQueryText.length >= this.maxChunkSize || endLineNo >= fileLines.length) break;
-            queryText = queryText + "\n" + fileLines[endLineNo];
-            endLineNo++;
-        }
-        return queryText;
-    }
+    
 
     async retrieve(cursor: Position, fileLines: string[]): Promise<AutocompleteCodeSnippet[]> {  
         try {
-            const queryText = await this.buildRetrieveQuery(cursor, fileLines);
+            const queryText = await getWindowArroundCursor(cursor, fileLines, this.llamaTokenizer, this.maxChunkSize);
             const encodedQueryText = await this.llamaTokenizer.encode(queryText);
             const candidateSnippets = await this.query();
             const encodedCandidateSnippets = await Promise.all(candidateSnippets.map(async (snippet: any) => {

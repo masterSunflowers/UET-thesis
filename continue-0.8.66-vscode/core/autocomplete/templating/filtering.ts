@@ -56,11 +56,8 @@ export const getSnippets = (
   for (let i = 0; i < payload.recentlyEditedRangeSnippets.length; i++) {
     payload.recentlyEditedRangeSnippets[i].content = "===RECENTLY===\n" + payload.recentlyEditedRangeSnippets[i].content
   }
-  for (let i = 0; i < payload.ideSnippets.length; i++) {
-    payload.ideSnippets[i].content = "===CALL===\n" + payload.ideSnippets[i].content
-  }
-  for (let i = 0; i < payload.repoCoderSnippets.length; i++) {
-    payload.repoCoderSnippets[i].content = "===SIMILAR===\n" + payload.repoCoderSnippets[i].content
+  for (let i = 0; i < payload.similarCodeSnippets.length; i++) {
+    payload.similarCodeSnippets[i].content = "===SIMILAR===\n" + payload.similarCodeSnippets[i].content
   }
   
 
@@ -70,8 +67,8 @@ export const getSnippets = (
         [ ...payload.rootPathSnippets, 
           ...payload.importDefinitionSnippets,
           ...payload.recentlyEditedRangeSnippets,
-          ...payload.ideSnippets,
-          ...payload.repoCoderSnippets
+          ...payload.similarCodeSnippets,
+          ...payload.similarUsageSnippets,
         ],
         helper.prunedCaretWindow,
       ),

@@ -10,7 +10,6 @@ const Diff = require("diff");
 
 import { showFreeTrialLoginMessage } from "../util/messages";
 import { VsCodeWebviewProtocol } from "../webviewProtocol";
-
 import { getDefinitionsFromLsp } from "./lsp";
 import { RecentlyEditedTracker } from "./recentlyEdited";
 import {

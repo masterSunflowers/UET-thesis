@@ -12,46 +12,21 @@ import {
 export interface SnippetPayload { 
   rootPathSnippets: AutocompleteCodeSnippet[];
   importDefinitionSnippets: AutocompleteCodeSnippet[];
-  ideSnippets: AutocompleteCodeSnippet[];
   recentlyEditedRangeSnippets: AutocompleteCodeSnippet[];
   diffSnippets: AutocompleteDiffSnippet[];
   clipboardSnippets: AutocompleteClipboardSnippet[];
-  repoCoderSnippets: AutocompleteCodeSnippet[];
+  similarCodeSnippets: AutocompleteCodeSnippet[];
+  similarUsageSnippets: AutocompleteCodeSnippet[];
 }
 
 function racePromise<T>(promise: Promise<T[]>): Promise<T[]> {
   const timeoutPromise = new Promise<T[]>((resolve) => {
-    setTimeout(() => resolve([]), 200);
+    setTimeout(() => resolve([]),2000);
   });
 
   return Promise.race([promise, timeoutPromise]);
 }
 
-// Some IDEs might have special ways of finding snippets (e.g. JetBrains and VS Code have different "LSP-equivalent" systems,
-// or they might separately track recently edited ranges)
-async function getIdeSnippets(
-  helper: HelperVars,
-  ide: IDE,
-  getDefinitionsFromLsp: GetLspDefinitionsFunction,
-): Promise<AutocompleteCodeSnippet[]> {
-  const ideSnippets = await getDefinitionsFromLsp(
-    helper.input.filepath,
-    helper.fullPrefix + helper.fullSuffix,
-    helper.fullPrefix.length,
-    ide,
-    helper.lang,
-  );
-
-  if (helper.options.onlyMyCode) {
-    const workspaceDirs = await ide.getWorkspaceDirs();
-
-    return ideSnippets.filter((snippet) =>
-      workspaceDirs.some((dir) => snippet.filepath.startsWith(dir)),
-    );
-  }
-
-  return ideSnippets;
-}
 
 function getSnippetsFromRecentlyEditedRanges(
   helper: HelperVars,
@@ -121,30 +96,32 @@ export const getAllSnippets = async ({
   const [
     // rootPathSnippets,
     // importDefinitionSnippets,
-    ideSnippets,
     diffSnippets,                 
     clipboardSnippets,
-    repoCoderSnippets
+    similarCodeSnippets,
+    similarUsageSnippets,
   ] = await Promise.all([
     // racePromise(contextRetrievalService.getRootPathSnippets(helper)),
     // racePromise(
     //   contextRetrievalService.getSnippetsFromImportDefinitions(helper),
     // ),
-    racePromise(getIdeSnippets(helper, ide, getDefinitionsFromLsp)),
     racePromise(getDiffSnippets(ide)),
     racePromise(getClipboardSnippets(ide)),
-    contextRetrievalService.getRepoCoderSnippets(helper)
+    contextRetrievalService.getSimilarCodeSnippets(helper),
+    contextRetrievalService.getSimilarUsageSnippets(helper, getDefinitionsFromLsp),
   ]);
   const rootPathSnippets: AutocompleteCodeSnippet[] = [];
   const importDefinitionSnippets: AutocompleteCodeSnippet[] = [];
+  console.log("Similar-usage snippets", similarUsageSnippets);
+  console.log("=====================================")
 
   return {
     rootPathSnippets,
     importDefinitionSnippets,
-    ideSnippets,
     recentlyEditedRangeSnippets,
     diffSnippets,
     clipboardSnippets,
-    repoCoderSnippets
+    similarCodeSnippets,
+    similarUsageSnippets,
   };
 };

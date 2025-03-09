@@ -1,16 +1,11 @@
 import { AutocompleteLanguageInfo } from "core/autocomplete/constants/AutocompleteLanguageInfo";
 import { getAst, getTreePathAtCursor } from "core/autocomplete/util/ast";
-import {
-  FUNCTION_BLOCK_NODE_TYPES,
-  FUNCTION_DECLARATION_NODE_TYPEs,
-} from "core/indexing/chunk/code";
 import { intersection } from "core/util/ranges";
 import * as vscode from "vscode";
 
 import type { IDE, Range, RangeInFile, RangeInFileWithContents } from "core";
 import type Parser from "web-tree-sitter";
 import {
-  AutocompleteSnippetDeprecated,
   GetLspDefinitionsFunction,
 } from "core/autocomplete/types";
 import {
@@ -203,75 +198,40 @@ async function crawlTypes(
   return results;
 }
 
-async function getWindowArround(filePath: string, range: Range, windowSize: number, ide: IDE) {
-  const startLine = range.start.line;
-  const endLine = range.end.line;
-  const fileContent = await ide.readFile(filePath);
-  const fileLines = fileContent.split(/\r?\n/);
-
-  const numExtendLines = windowSize - (endLine - startLine + 1);
-  const numPrefixLines = Math.min(startLine, Math.floor(numExtendLines / 2));
-  
-  const newStartLineNo = startLine - numPrefixLines;
-  const newEndLineNo = Math.min(fileLines.length, newStartLineNo + windowSize);
-  
-  const content = fileLines.slice(newStartLineNo, newEndLineNo).join("\n");
-  return {
-    filepath: filePath,
-    content: content,
-    range: {
-      start: {
-        line: newStartLineNo,
-        character: 0,
-      },
-      end: {
-        line: newEndLineNo,
-        character: 0
-      },
-    },
-  }
-}
 
 export async function getDefinitionsForNode(
   uri: string,
   node: Parser.SyntaxNode,
   ide: IDE,
   lang: AutocompleteLanguageInfo,
-): Promise<any> {
-  const ranges: (RangeInFile | RangeInFileWithContents)[] = [];
+): Promise<RangeInFile[]> {
+  const ranges: RangeInFile[] = [];
   switch (node.type) {
-    case "call_expression":     // function call typescript 
-    case "method_invocation":   // function call java
-    case "call":                // function call python
+    case "call_expression":                 // function call typescript 
+    case "method_invocation":               // function call java
+    case "call":                            // function call, new object python
+    case "new_expression":                  // new object typescript
+    case "object_creation_expression":      // new object java
     {
-      const [funcDef] = await executeGotoProvider({
+      const [defSymbol] = await executeGotoProvider({
         uri,
         line: node.startPosition.row,
         character: node.startPosition.column,
         name: "vscode.executeDefinitionProvider",
       });
-      if (!funcDef) {
+      if (!defSymbol) {
         return [];
       }
 
-      // funcDef: filepath, range
-      const funcUsages = await executeGotoProvider({
-        uri: funcDef.filepath,
-        line: funcDef.range.end.line,
-        character: funcDef.range.end.character,
+      // defSymbol: filepath, range
+      const symbolUsages = await executeGotoProvider({
+        uri: defSymbol.filepath,
+        line: defSymbol.range.end.line,
+        character: defSymbol.range.end.character,
         name: "vscode.executeReferenceProvider"
       });
 
-      for (const funcUsage of funcUsages) {
-        // Get window around the usage of the function
-        const window = await getWindowArround(funcUsage.filepath, funcUsage.range, 10, ide);
-        ranges.push({
-          filepath: window.filepath,
-          contents: window.content,
-          range: window.range
-        });
-      }
-      
+      return symbolUsages;
     }
     case "variable_declarator":
       // variable assignment -> variable definition/type
@@ -280,44 +240,6 @@ export async function getDefinitionsForNode(
     case "impl_item":
       // impl of trait -> trait definition
       break;
-    case "new_expression":              // object creation java
-    case "object_creation_expression":  // object creation java
-    case "call":                        // object creation python
-    {
-      console.log("Current node:")
-      console.log(node)
-      // // In 'new MyClass(...)', "MyClass" is the classNameNode
-      // const classNameNode = node.children.find(
-      //   (child) => child.type === "identifier",
-      // );
-      // const [classDef] = await executeGotoProvider({
-      //   uri,
-      //   line: (classNameNode ?? node).endPosition.row,
-      //   character: (classNameNode ?? node).endPosition.column,
-      //   name: "vscode.executeDefinitionProvider",
-      // });
-      // if (!classDef) {
-      //   break;
-      // }
-      // const contents = await ide.readRangeInFile(
-      //   classDef.filepath,
-      //   classDef.range,
-      // );
-
-      // ranges.push({
-      //   ...classDef,
-      //   contents: `${
-      //     classNameNode?.text
-      //       ? `${lang.singleLineComment} ${classNameNode.text}:\n`
-      //       : ""
-      //   }${contents.trim()}`,
-      // });
-
-      // const definitions = await crawlTypes({ ...classDef, contents }, ide);
-      // ranges.push(...definitions.filter(Boolean));
-
-      // break;
-    }
     case "":
       break;
   }
@@ -336,7 +258,7 @@ export const getDefinitionsFromLsp: GetLspDefinitionsFunction = async (
   cursorIndex: number,
   ide: IDE,
   lang: AutocompleteLanguageInfo,
-): Promise<AutocompleteCodeSnippet[]> => {
+): Promise<RangeInFile[]> => {
   try {
     const ast = await getAst(filepath, contents);
     if (!ast) {
@@ -348,7 +270,7 @@ export const getDefinitionsFromLsp: GetLspDefinitionsFunction = async (
       return [];
     }
 
-    const results: RangeInFileWithContents[] = [];
+    const results: RangeInFile[] = [];
     for (const node of treePath.reverse()) {
       const definitions = await getDefinitionsForNode(
         filepath,
@@ -358,12 +280,8 @@ export const getDefinitionsFromLsp: GetLspDefinitionsFunction = async (
       );
       results.push(...definitions);
     }
-
-    return results.map((result) => ({
-      filepath: result.filepath,
-      content: result.contents,
-      type: AutocompleteSnippetType.Code,
-    }));
+    return results;
+    
   } catch (e) {
     console.warn("Error getting definitions from LSP: ", e);
     return [];

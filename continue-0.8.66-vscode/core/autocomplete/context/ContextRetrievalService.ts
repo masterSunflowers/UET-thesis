@@ -4,15 +4,18 @@ import {
   AutocompleteSnippetType,
 } from "../snippets/types";
 import { HelperVars } from "../util/HelperVars";
+import { GetLspDefinitionsFunction } from "../types.js"
 
 import { ImportDefinitionsService } from "./ImportDefinitionsService";
 import { getSymbolsForSnippet } from "./ranking";
 import { RootPathContextService } from "./RootPathContextService";
 import { SimilarCodeContextService } from "./SimilarCodeContextService"; 
+import { SimilarUsageContextService } from "./SimilarUsageContextService"; 
 export class ContextRetrievalService {
   private importDefinitionsService: ImportDefinitionsService;
   private rootPathContextService: RootPathContextService;
   private similarCodeContextService: SimilarCodeContextService;
+  private similarUsageContextService: SimilarUsageContextService;
 
   constructor(private readonly ide: IDE) {
     this.importDefinitionsService = new ImportDefinitionsService(this.ide);
@@ -21,6 +24,7 @@ export class ContextRetrievalService {
       this.ide,
     );
     this.similarCodeContextService = new SimilarCodeContextService(this.ide);
+    this.similarUsageContextService = new SimilarUsageContextService();
   }
 
   public async getSnippetsFromImportDefinitions(
@@ -73,9 +77,23 @@ export class ContextRetrievalService {
     );
   }
 
-  public async getRepoCoderSnippets(
+  public async getSimilarCodeSnippets(
     helper: HelperVars
   ): Promise<AutocompleteCodeSnippet[]> {
     return this.similarCodeContextService.retrieve(helper.cursor, helper.fileLines);
+  }
+
+  public async getSimilarUsageSnippets(
+    helper: HelperVars,
+    getDefinitionsFromLsp: GetLspDefinitionsFunction,
+  ): Promise<AutocompleteCodeSnippet[]> {
+    return this.similarUsageContextService.retrieve(
+      helper.filepath,
+      helper.fullPrefix + helper.fullSuffix,
+      helper.fullPrefix.length,
+      this.ide,
+      helper.lang,
+      getDefinitionsFromLsp,
+    );
   }
 }
