@@ -18,10 +18,6 @@ class Calculator {
     return this;
   }
 
-  hello() {
-    hello
-  }
-
   divide(number) {
     if (number === 0) {
       throw new Error("Cannot divide by zero");
@@ -39,7 +35,7 @@ class Calculator {
     return this;
   }
 
-  hi_there() {
-    total = this.add(10).subtract(5).multiply(2).divide(4).getResult();
+  hallo() {
+
   }
 }

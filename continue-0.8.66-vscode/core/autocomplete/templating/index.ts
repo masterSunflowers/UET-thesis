@@ -13,6 +13,7 @@ import {
 import { getSnippets } from "./filtering";
 import { formatSnippets } from "./formatting";
 import { getStopTokens } from "./getStopTokens";
+import { AutocompleteSnippet } from "../snippets/types";
 
 function getTemplate(helper: HelperVars): AutocompleteTemplate {
   if (helper.options.template) {
@@ -45,7 +46,7 @@ function renderStringTemplate(
   });
 }
 
-export function renderPrompt({
+export async function renderPrompt({
   snippetPayload,
   workspaceDirs,
   helper,
@@ -53,12 +54,12 @@ export function renderPrompt({
   snippetPayload: SnippetPayload;
   workspaceDirs: string[];
   helper: HelperVars;
-}): {
+}): Promise<{
   prompt: string;
   prefix: string;
   suffix: string;
   completionOptions: Partial<CompletionOptions> | undefined;
-} {
+}> {
   // If prefix is manually passed
   let prefix = helper.input.manuallyPassPrefix || helper.prunedPrefix;
   let suffix = helper.input.manuallyPassPrefix ? "" : helper.prunedSuffix;
@@ -71,8 +72,24 @@ export function renderPrompt({
   const { template, compilePrefixSuffix, completionOptions } =
     getTemplate(helper);
 
-  const snippets = getSnippets(helper, snippetPayload);
+  const rankedSnippets = await getSnippets(helper, snippetPayload);
 
+  for (const sp of rankedSnippets) {
+    console.log(sp.similarityScore);
+    console.log("----");
+    console.log(sp.content);
+    console.log("============================");
+  }
+
+  const snippets = rankedSnippets.map((snippet) => {
+    return {
+      filepath: "filepath" in snippet ? snippet.filepath : "Untitled.txt",
+      content: snippet.content,
+      type: snippet.type,
+    } as AutocompleteSnippet;
+  });
+
+  
   // Some models have prompts that need two passes. This lets us pass the compiled prefix/suffix
   // into either the 2nd template to generate a raw string, or to pass prefix, suffix to a FIM endpoint
   if (compilePrefixSuffix) {

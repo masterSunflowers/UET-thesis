@@ -15,6 +15,11 @@ Will be added soon
 - The base implementation don't sort the similarity of retrieval code to the complete window (may be because it only retrieves definition of class, function. So there is no need to do that)
 
 - Sliding window size (~500 characters)
+
+# TODO
+- [ ] Run exist test cases for autocomplete feature
+- [ ] Handle getAllSnippets function correctly
+- [ ] Change racePromise to 100-200ms 
 # Continue
 
 <div align="center">

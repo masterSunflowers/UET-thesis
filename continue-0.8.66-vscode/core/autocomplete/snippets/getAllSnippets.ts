@@ -21,7 +21,7 @@ export interface SnippetPayload {
 
 function racePromise<T>(promise: Promise<T[]>): Promise<T[]> {
   const timeoutPromise = new Promise<T[]>((resolve) => {
-    setTimeout(() => resolve([]),2000);
+    setTimeout(() => resolve([]),1000);
   });
 
   return Promise.race([promise, timeoutPromise]);
@@ -44,6 +44,7 @@ function getSnippetsFromRecentlyEditedRanges(
   });
 }
 
+
 const getClipboardSnippets = async (
   ide: IDE,
 ): Promise<AutocompleteClipboardSnippet[]> => {
@@ -58,6 +59,7 @@ const getClipboardSnippets = async (
   });
 };
 
+
 const getDiffSnippets = async (
   ide: IDE,
 ): Promise<AutocompleteDiffSnippet[]> => {
@@ -70,6 +72,7 @@ const getDiffSnippets = async (
     };
   });
 };
+
 
 export const getAllSnippets = async ({
   helper,
@@ -112,8 +115,6 @@ export const getAllSnippets = async ({
   ]);
   const rootPathSnippets: AutocompleteCodeSnippet[] = [];
   const importDefinitionSnippets: AutocompleteCodeSnippet[] = [];
-  console.log("Similar-usage snippets", similarUsageSnippets);
-  console.log("=====================================")
 
   return {
     rootPathSnippets,

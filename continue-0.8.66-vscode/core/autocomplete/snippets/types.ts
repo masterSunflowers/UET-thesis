@@ -14,6 +14,12 @@ export interface AutocompleteCodeSnippet extends BaseAutocompleteSnippet {
   type: AutocompleteSnippetType.Code;
 }
 
+export interface AutocompleteRankedSnippet extends BaseAutocompleteSnippet {
+  filepath?: string;
+  similarityScore: number;
+  copiedAt?: string;
+}
+
 export interface AutocompleteDiffSnippet extends BaseAutocompleteSnippet {
   type: AutocompleteSnippetType.Diff;
 }

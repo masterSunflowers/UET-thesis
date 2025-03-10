@@ -3,9 +3,13 @@ import { SnippetPayload } from "../snippets";
 import {
   AutocompleteCodeSnippet,
   AutocompleteSnippet,
+  AutocompleteRankedSnippet,
+
 } from "../snippets/types";
 import { HelperVars } from "../util/HelperVars";
 import { isValidSnippet } from "./validation";
+import { LlamaAsyncEncoder } from "../../llm/asyncEncoder";
+import { getWindowArroundCursor, jaccardSimilarity } from "../context/ranking";
 
 const getRemainingTokenCount = (helper: HelperVars): number => {
   const tokenCount = countTokens(helper.prunedCaretWindow, helper.modelName);
@@ -37,33 +41,48 @@ function filterSnippetsAlreadyInCaretWindow(
   );
 }
 
-export const getSnippets = (
+const llamaTokenizer = new LlamaAsyncEncoder();
+
+async function getRankedSnippets(
+  queryText: string,
+  snippets: AutocompleteSnippet[],
+): Promise<AutocompleteRankedSnippet[]> {
+  
+  const encodedQueryText = await llamaTokenizer.encode(queryText);
+  const encodedSnippets = await Promise.all(snippets.map(async (snippet: any) => {
+      const encodedSnippet = await llamaTokenizer.encode(snippet.content);
+      const similarityScore = jaccardSimilarity(encodedQueryText, encodedSnippet);
+      return { ...snippet, similarityScore };
+  }));
+  
+  const ranking = encodedSnippets.sort((a: any, b: any) => b.similarity - a.similarity);
+  const result = ranking.map((snippet: any) => ({
+    ...snippet
+  }));
+  return result;
+}
+
+export const getSnippets = async (
   helper: HelperVars,
   payload: SnippetPayload,
-): AutocompleteSnippet[] => {
+): Promise<AutocompleteRankedSnippet[]> => {
   for (let i = 0; i < payload.diffSnippets.length; i++) {
     payload.diffSnippets[i].content = "===DIFF===\n" + payload.diffSnippets[i].content
   }
   for (let i = 0; i < payload.clipboardSnippets.length; i++) {
     payload.clipboardSnippets[i].content = "===CLIPBOARD===\n" + payload.clipboardSnippets[i].content
   }
-  for (let i = 0; i < payload.rootPathSnippets.length; i++) {
-    payload.rootPathSnippets[i].content = "===ROOTPATH===\n" + payload.rootPathSnippets[i].content
-  }
-  for (let i = 0; i < payload.importDefinitionSnippets.length; i++) {
-    payload.importDefinitionSnippets[i].content = "===IMPORT===\n" + payload.importDefinitionSnippets[i].content
-  }
   for (let i = 0; i < payload.recentlyEditedRangeSnippets.length; i++) {
     payload.recentlyEditedRangeSnippets[i].content = "===RECENTLY===\n" + payload.recentlyEditedRangeSnippets[i].content
   }
   for (let i = 0; i < payload.similarCodeSnippets.length; i++) {
-    payload.similarCodeSnippets[i].content = "===SIMILAR===\n" + payload.similarCodeSnippets[i].content
+    payload.similarCodeSnippets[i].content = "===CODE===\n" + payload.similarCodeSnippets[i].content
   }
-  
+  for (let i = 0; i < payload.similarUsageSnippets.length; i++) {
+    payload.similarUsageSnippets[i].content = "===USAGE===\n" + payload.similarUsageSnippets[i].content
+  }
 
-  const snippets = [
-    ...shuffleArray(
-      filterSnippetsAlreadyInCaretWindow(
+  const filteredSnippets = filterSnippetsAlreadyInCaretWindow(
         [ ...payload.rootPathSnippets, 
           ...payload.importDefinitionSnippets,
           ...payload.recentlyEditedRangeSnippets,
@@ -71,19 +90,24 @@ export const getSnippets = (
           ...payload.similarUsageSnippets,
         ],
         helper.prunedCaretWindow,
-      ),
+  )
 
-    ),
-    ...payload.diffSnippets,
-    ...payload.clipboardSnippets,
-  ];
+  const queryText = await getWindowArroundCursor(helper.cursor, helper.fileLines, llamaTokenizer, 128);
+  const rankedSnippets = await getRankedSnippets(
+    queryText,
+    [
+      ...filteredSnippets,
+      ...payload.diffSnippets,
+      ...payload.clipboardSnippets,
+    ],
+  );
 
   const finalSnippets = [];
 
   let remainingTokenCount = getRemainingTokenCount(helper);
 
-  while (remainingTokenCount > 0 && snippets.length > 0) {
-    const snippet = snippets.shift();
+  while (remainingTokenCount > 0 && rankedSnippets.length > 0) {
+    const snippet = rankedSnippets.shift();
     if (!snippet || !isValidSnippet(snippet)) {
       continue;
     }

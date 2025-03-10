@@ -177,7 +177,7 @@ export class CompletionProvider {
         this.ide.getWorkspaceDirs(),
       ]);
       
-      const { prompt, prefix, suffix, completionOptions } = renderPrompt({
+      const { prompt, prefix, suffix, completionOptions } = await renderPrompt({
         snippetPayload,
         workspaceDirs,
         helper,
@@ -185,6 +185,7 @@ export class CompletionProvider {
 
       // console.log("Prompt:", prompt);
       // console.log("====================================================");
+
       // Completion
       let completion: string | undefined = "";
 
