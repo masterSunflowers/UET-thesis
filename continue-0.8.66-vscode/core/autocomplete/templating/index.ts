@@ -74,12 +74,12 @@ export async function renderPrompt({
 
   const rankedSnippets = await getSnippets(helper, snippetPayload);
 
-  for (const sp of rankedSnippets) {
-    console.log(sp.similarityScore);
-    console.log("----");
-    console.log(sp.content);
-    console.log("============================");
-  }
+  // for (const sp of rankedSnippets) {
+  //   console.log(sp.similarityScore);
+  //   console.log("----");
+  //   console.log(sp.content);
+  //   console.log("============================");
+  // }
 
   const snippets = rankedSnippets.map((snippet) => {
     return {

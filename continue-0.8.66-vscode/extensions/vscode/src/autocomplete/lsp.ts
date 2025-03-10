@@ -231,7 +231,18 @@ export async function getDefinitionsForNode(
         name: "vscode.executeReferenceProvider"
       });
 
-      return symbolUsages;
+      // Similar usages should not be the symbol definition itself, or the symbol usage itself
+      const filteredSymbolUsages = symbolUsages.filter((symbolUsage) => {
+        return ((symbolUsage.filepath !== defSymbol.filepath 
+                  || symbolUsage.range.start.line !== defSymbol.range.start.line)
+                && (symbolUsage.filepath !== uri
+                  || symbolUsage.range.start.line !== node.startPosition.row)
+                );
+      });
+      // console.log("symbolUsages", symbolUsages);
+      // console.log("=================================================");
+      // console.log("filteredSymbolUsages", filteredSymbolUsages);
+      return filteredSymbolUsages;
     }
     case "variable_declarator":
       // variable assignment -> variable definition/type
