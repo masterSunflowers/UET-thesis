@@ -21,8 +21,6 @@ export class SimilarCodeContextService {
         this.ide = ide;
     }
 
-    
-
     async retrieve(cursor: Position, fileLines: string[]): Promise<AutocompleteCodeSnippet[]> {  
         try {
             const queryText = await getWindowArroundCursor(cursor, fileLines, this.llamaTokenizer, this.maxChunkSize);
@@ -60,5 +58,4 @@ export class SimilarCodeContextService {
         const result = await db.all(query, params);
         return result;
     }
-     
 }
