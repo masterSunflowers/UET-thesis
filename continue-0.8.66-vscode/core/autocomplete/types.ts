@@ -1,5 +1,6 @@
 import { IDE, RangeInFileWithContents } from "../index";
 import { AutocompleteLanguageInfo } from "./constants/AutocompleteLanguageInfo";
+import { SymbolUsage } from "../index";
 import { RangeInFile } from "../index";
 
 /**
@@ -17,4 +18,4 @@ export type GetLspDefinitionsFunction = (
   cursorIndex: number,
   ide: IDE,
   lang: AutocompleteLanguageInfo,
-) => Promise<RangeInFile[]>;
+) => Promise<SymbolUsage[]>;

@@ -3,7 +3,7 @@ import { getAst, getTreePathAtCursor } from "core/autocomplete/util/ast";
 import { intersection } from "core/util/ranges";
 import * as vscode from "vscode";
 
-import type { IDE, Range, RangeInFile, RangeInFileWithContents } from "core";
+import type { IDE, Range, RangeInFile, RangeInFileWithContents, SymbolUsage } from "core";
 import type Parser from "web-tree-sitter";
 import {
   GetLspDefinitionsFunction,
@@ -198,14 +198,12 @@ async function crawlTypes(
   return results;
 }
 
-
 export async function getDefinitionsForNode(
   uri: string,
   node: Parser.SyntaxNode,
   ide: IDE,
   lang: AutocompleteLanguageInfo,
-): Promise<RangeInFile[]> {
-  const ranges: RangeInFile[] = [];
+): Promise<SymbolUsage> {
   switch (node.type) {
     case "call_expression":                 // function call typescript 
     case "method_invocation":               // function call java
@@ -213,6 +211,7 @@ export async function getDefinitionsForNode(
     case "new_expression":                  // new object typescript
     case "object_creation_expression":      // new object java
     {
+      const symbol = node.text;
       const [defSymbol] = await executeGotoProvider({
         uri,
         line: node.startPosition.row,
@@ -220,7 +219,7 @@ export async function getDefinitionsForNode(
         name: "vscode.executeDefinitionProvider",
       });
       if (!defSymbol) {
-        return [];
+        return {symbol: symbol, usages: []};
       }
 
       // defSymbol: filepath, range
@@ -239,10 +238,7 @@ export async function getDefinitionsForNode(
                   || symbolUsage.range.start.line !== node.startPosition.row)
                 );
       });
-      // console.log("symbolUsages", symbolUsages);
-      // console.log("=================================================");
-      // console.log("filteredSymbolUsages", filteredSymbolUsages);
-      return filteredSymbolUsages;
+      return {symbol: symbol, usages: filteredSymbolUsages};
     }
     case "variable_declarator":
       // variable assignment -> variable definition/type
@@ -254,7 +250,7 @@ export async function getDefinitionsForNode(
     case "":
       break;
   }
-  return ranges;
+  return {};
 }
 
 /**
@@ -269,7 +265,7 @@ export const getDefinitionsFromLsp: GetLspDefinitionsFunction = async (
   cursorIndex: number,
   ide: IDE,
   lang: AutocompleteLanguageInfo,
-): Promise<RangeInFile[]> => {
+): Promise<SymbolUsage[]> => {
   try {
     const ast = await getAst(filepath, contents);
     if (!ast) {
@@ -281,7 +277,7 @@ export const getDefinitionsFromLsp: GetLspDefinitionsFunction = async (
       return [];
     }
 
-    const results: RangeInFile[] = [];
+    const results: SymbolUsage[] = [];
     for (const node of treePath.reverse()) {
       const definitions = await getDefinitionsForNode(
         filepath,
@@ -289,7 +285,7 @@ export const getDefinitionsFromLsp: GetLspDefinitionsFunction = async (
         ide,
         lang,
       );
-      results.push(...definitions);
+      results.push(definitions);
     }
     return results;
     

@@ -264,6 +264,11 @@ export interface RangeInFile {
   range: Range;
 }
 
+export interface SymbolUsage {
+  symbol?: string;
+  usages?: RangeInFile[];
+}
+
 export interface Location {
   filepath: string;
   position: Position;
