@@ -9,12 +9,14 @@ Will be added soon
 # Known issues
 
 - If the Java project has multiple function with the same name within a file, the gotoDefinition function will return the first function that Language Server has parsed
+- Execute provider function (related to LSP) has cache machanism. Because the cache key is combined just only by position of cursor and uri of file, so if you move the cursor to the same position, the cache will be used even if the content of that position is changed.
+- Because incremental indexing for similar code chunk will save the chunks that has different different hash values so if a chunk is just changed a little bit, it will be indexed as a new chunk. This may cause a lot of "duplicate" chunks with almost same value if retrieval in this case -> the retrieval result will be not good.
 
 # Note
 
-- The base implementation don't sort the similarity of retrieval code to the complete window (may be because it only retrieves definition of class, function. So there is no need to do that)
+- The base implementation don't sort the similarity of retrieval code to the complete window (may be because it only retrieves definition of class, function)
 
-- Sliding window size (~500 characters)
+- Sliding window size (128 tokens)
 
 # TODO
 - [ ] Run exist test cases for autocomplete feature

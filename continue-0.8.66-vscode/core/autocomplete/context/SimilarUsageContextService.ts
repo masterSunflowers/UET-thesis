@@ -23,7 +23,6 @@ export class SimilarUsageContextService {
         lang: AutocompleteLanguageInfo,
         getLspDefinitions: GetLspDefinitionsFunction
     ): Promise<AutocompleteCodeSnippet[]> {
-
         const snippets: AutocompleteCodeSnippet[] = [];
         const symbolUsages = await getLspDefinitions(filepath, contents, cursorIndex, ide, lang);
         const fileLines = contents.split("\n");
@@ -40,6 +39,10 @@ export class SimilarUsageContextService {
                 });
             }
 
+        }
+        for (const sp of snippets) {
+            console.log(sp);
+            console.log("-----------------------------");
         }
         return snippets;
     }
