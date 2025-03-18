@@ -40,10 +40,6 @@ export class SimilarUsageContextService {
             }
 
         }
-        for (const sp of snippets) {
-            console.log(sp);
-            console.log("-----------------------------");
-        }
         return snippets;
     }
 }

@@ -53,6 +53,7 @@ export class SimilarCodeContextService {
         const db: DatabaseConnection = await SqliteDb.get();
         const workspaceDirs = await this.ide.getWorkspaceDirs();
         const workspaceDir = workspaceDirs[0];
+        console.log("workspaceDir", workspaceDir);
         const query = `SELECT path, startLine, endLine, content FROM chunks WHERE INSTR(path, ?) > 0`;
         const params = [workspaceDir];
         const result = await db.all(query, params);

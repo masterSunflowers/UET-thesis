@@ -38,4 +38,8 @@ class Calculator {
   hallo() {
 
   }
+  
+  thisisatest() {
+    
+  }
 }
