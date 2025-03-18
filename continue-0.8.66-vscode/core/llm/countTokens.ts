@@ -83,8 +83,11 @@ function countImageTokens(content: MessagePart): number {
 async function countTokensAsync(
   content: MessageContent,
   // defaults to llama2 because the tokenizer tends to produce more tokens
-  modelName = "llama2",
+  // I change this defaults to "none" because I want this countTokenAsync function use GPT Encoder, which is somewhat similar as python codegen tokenizer
+  modelName = "none",
 ): Promise<number> {
+  // Just add for debug
+  // console.log("Model name:", modelName);
   const encoding = asyncEncoderForModel(modelName);
   if (Array.isArray(content)) {
     const promises = content.map(async (part) => {

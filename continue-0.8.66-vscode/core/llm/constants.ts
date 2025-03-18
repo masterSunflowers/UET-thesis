@@ -26,10 +26,10 @@ const CONTEXT_LENGTH_FOR_MODEL: { [name: string]: number } = {
   "gpt-4-1106-preview": GPT_4_CTX_LEN,
 };
 
-const TOKEN_BUFFER_FOR_SAFETY = 350;
+const TOKEN_BUFFER_FOR_SAFETY = 100;
 const PROXY_URL = "http://localhost:65433";
 
-const DEFAULT_MAX_CHUNK_SIZE = 100; // 512 - buffer for safety (in case of differing tokenizers) // Change this to smaller chunk size so that good for autocomplet (I think)
+const DEFAULT_MAX_CHUNK_SIZE = 250; // 512 - buffer for safety (in case of differing tokenizers) // Change this to smaller chunk size so that good for autocomplet (I think)
 const DEFAULT_MAX_BATCH_SIZE = 64;
 
 export {
