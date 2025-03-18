@@ -54,6 +54,7 @@ export class ChunkCodebaseIndex implements CodebaseIndex {
         results.compute = results.compute.filter(
           (item) => !resp.files[item.cacheKey],
         );
+        
       } catch (e) {
         console.error("Failed to fetch from remote cache: ", e);
       }
