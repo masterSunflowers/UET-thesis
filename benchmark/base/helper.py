@@ -46,7 +46,7 @@ class Helper:
         cursor_index: Point,
         language_server,
         language: str = "java",
-        model_name: str = "deepseek-coder",
+        model_name: str = "gpt-3.5-turbo-instruct",
     ):
         self.repo_dir = repo_dir
         self.language = language

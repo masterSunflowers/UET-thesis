@@ -4,7 +4,7 @@ from typing import Optional, List
 import tree_sitter
 import tree_sitter_java as tsjava
 import tree_sitter_python as tspython
-from transformers import LlamaTokenizerFast
+from transformers import tokenizer
 from tree_sitter import Node, Point, Tree
 from pydantic import BaseModel
 
@@ -31,9 +31,6 @@ TREE_SITTER_NODE_TYPES = {
 LANGUAGE_COMMENT_SYMBOL = {
     "java": "//",
     "python": "#",
-    "javascript": "//",
-    "typescript": "//",
-    "csharp": "//",
 }
 COMMON_STOPS = ["/src", "#- coding: utf-8", "```"]
 FUNCTION_BLOCK_NODE_TYPES = ["block", "statement_block"]
