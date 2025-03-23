@@ -1,6 +1,7 @@
 import argparse
 import os
 import sys
+import time
 
 from tqdm import tqdm
 
@@ -9,6 +10,7 @@ import logging
 from typing import List, Optional, Dict, Any
 
 import pandas as pd
+import multilspy
 from multilspy.language_server import SyncLanguageServer
 from multilspy.multilspy_config import MultilspyConfig
 from multilspy.multilspy_logger import MultilspyLogger
@@ -90,28 +92,37 @@ class PromptBuilder:
                 print("Helper is ready")
                 print(row["encode"])
 
-                with helper.language_server.start_server():
-                    print("Init server success!!!")
-                    snippet_payload = get_all_snippets(helper)
-                    # ide_snippets, import_snippets, root_path_context_snippets = snippet_payload
-                    prompt, prefix, suffix, completion_options = render_prompt(
-                        snippet_payload, helper
-                    )
-                    if prompt is None:
-                        logger.warning(f"Encounter outlier at index {idx}")
-                    outputs.append(
-                        BuilderOutput(
-                            model_name=self.model_name,
-                            # ide_snippets=ide_snippets,
-                            # import_snippets=import_snippets,
-                            # root_path_context_snippets=root_path_context_snippets,
-                            snippets=snippet_payload,
-                            built_prompt=prompt,
-                            prefix=prefix,
-                            suffix=suffix,
-                            completion_options=completion_options,
-                        )
-                    )
+                max_tries = 10
+                for i in range(max_tries):
+                    try:
+                        with helper.language_server.start_server():
+                            print("Init server success!!!")
+                            snippet_payload = get_all_snippets(helper)
+                            # ide_snippets, import_snippets, root_path_context_snippets = snippet_payload
+                            prompt, prefix, suffix, completion_options = render_prompt(
+                                snippet_payload, helper
+                            )
+                            if prompt is None:
+                                logger.warning(f"Encounter outlier at index {idx}")
+                            outputs.append(
+                                BuilderOutput(
+                                    model_name=self.model_name,
+                                    # ide_snippets=ide_snippets,
+                                    # import_snippets=import_snippets,
+                                    # root_path_context_snippets=root_path_context_snippets,
+                                    snippets=snippet_payload,
+                                    built_prompt=prompt,
+                                    prefix=prefix,
+                                    suffix=suffix,
+                                    completion_options=completion_options,
+                                )
+                            )
+                    except multilspy.lsp_protocol_handler.server.Error:
+                        time.sleep(1)
+                        continue
+                    except Exception as e:
+                        raise e
+                    break
             except Exception as e:
                 logger.error(f"Error occurs when handling {idx}")
                 logger.error(str(e))
