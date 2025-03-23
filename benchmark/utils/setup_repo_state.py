@@ -16,7 +16,7 @@ CWD = os.path.abspath(os.path.dirname(__file__))
 
 logger = logging.Logger("setup_commit", level=logging.INFO)
 logger.addHandler(
-    logging.FileHandler(os.path.join(CWD, "log", "setup_commit.log"))
+    logging.FileHandler(os.path.join(CWD, "setup_commit.log"))
 )
 
 
