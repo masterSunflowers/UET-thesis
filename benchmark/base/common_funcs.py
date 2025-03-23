@@ -1,6 +1,6 @@
 import re
 from typing import Optional, List
-
+from textwrap import dedent
 import tree_sitter
 import tree_sitter_java as tsjava
 import tree_sitter_python as tspython
@@ -41,14 +41,131 @@ TOP_LEVEL_KEY_WORDS = {"java": ["class", "function"], "python": ["def", "class",
 TOKENIZER = AutoTokenizer.from_pretrained("Salesforce/codegen-6B-mono", token=os.getenv(""))
 TYPES_TO_USE = {"program", "function_declaration", "method_definition"}
 QUERIES = {
-    "java": {
-        "import_query": "(import_declaration\n  (scoped_identifier\n    (identifier) @import))",
-        "method_declaration": """; Method parameters\n(method_declaration\n  (formal_parameters\n    (formal_parameter\n    \t(type_identifier) @a\n    )\n  )\n)\n\n; Return type\n(method_declaration\n  (type_identifier) @b\n)"""
+    "root_path_context_queries": {
+        "python": {
+            "class_definition": dedent("""
+; Match superclass identifiers in a simple inheritance
+(class_definition
+  superclasses: (argument_list
+    (identifier) @catch)
+  (#not-match? @catch "^(str|int|float|bool|list|dict|tuple|set|frozenset|complex|bytes|bytearray|memoryview|range|slice|object|type|NoneType|List|Dict|Tuple|Set|FrozenSet|Union|Optional|Any|Callable|Iterable|Iterator|Generator|Coroutine|AsyncIterable|AsyncIterator|Awaitable|ContextManager|Pattern|Match|TypeVar|Generic|Sequence|Mapping|MutableMapping|MutableSequence|ByteString|Reversible|Sized|Container|Collection|AbstractSet|MutableSet|KeysView|ItemsView|ValuesView|Hashable|Sized|SupportsInt|SupportsFloat|SupportsComplex|SupportsBytes|SupportsAbs|SupportsRound|ChainMap|Counter|OrderedDict|defaultdict|deque|namedtuple|TypedDict)$")
+)
+
+; Match the value of a keyword argument in class inheritance
+(class_definition
+  superclasses: (argument_list
+    (keyword_argument
+      (_)
+      (identifier) @catch))
+  (#not-match? @catch "^(str|int|float|bool|list|dict|tuple|set|frozenset|complex|bytes|bytearray|memoryview|range|slice|object|type|NoneType|List|Dict|Tuple|Set|FrozenSet|Union|Optional|Any|Callable|Iterable|Iterator|Generator|Coroutine|AsyncIterable|AsyncIterator|Awaitable|ContextManager|Pattern|Match|TypeVar|Generic|Sequence|Mapping|MutableMapping|MutableSequence|ByteString|Reversible|Sized|Container|Collection|AbstractSet|MutableSet|KeysView|ItemsView|ValuesView|Hashable|Sized|SupportsInt|SupportsFloat|SupportsComplex|SupportsBytes|SupportsAbs|SupportsRound|ChainMap|Counter|OrderedDict|defaultdict|deque|namedtuple|TypedDict)$")
+)
+
+; Match identifiers within subscripts in class inheritance
+(class_definition
+  superclasses: (argument_list
+    (subscript
+      (identifier) @catch
+    ))
+  (#not-match? @catch "^(str|int|float|bool|list|dict|tuple|set|frozenset|complex|bytes|bytearray|memoryview|range|slice|object|type|NoneType|List|Dict|Tuple|Set|FrozenSet|Union|Optional|Any|Callable|Iterable|Iterator|Generator|Coroutine|AsyncIterable|AsyncIterator|Awaitable|ContextManager|Pattern|Match|TypeVar|Generic|Sequence|Mapping|MutableMapping|MutableSequence|ByteString|Reversible|Sized|Container|Collection|AbstractSet|MutableSet|KeysView|ItemsView|ValuesView|Hashable|Sized|SupportsInt|SupportsFloat|SupportsComplex|SupportsBytes|SupportsAbs|SupportsRound|ChainMap|Counter|OrderedDict|defaultdict|deque|namedtuple|TypedDict)$")    
+)
+            """),
+            "function_definition": dedent("""
+; When the type is a simple identifier:
+(function_definition
+  parameters: (parameters
+    (typed_parameter
+      type: (type
+              (identifier) @type_identifier)))
+
+  (#not-match? @type_identifier "^(str|int|float|bool|list|dict|tuple|set|frozenset|complex|bytes|bytearray|memoryview|range|slice|object|type|NoneType|List|Dict|Tuple|Set|FrozenSet|Union|Optional|Any|Callable|Iterable|Iterator|Generator|Coroutine|AsyncIterable|AsyncIterator|Awaitable|ContextManager|Pattern|Match|TypeVar|Generic|Sequence|Mapping|MutableMapping|MutableSequence|ByteString|Reversible|Sized|Container|Collection|AbstractSet|MutableSet|KeysView|ItemsView|ValuesView|Hashable|Sized|SupportsInt|SupportsFloat|SupportsComplex|SupportsBytes|SupportsAbs|SupportsRound|ChainMap|Counter|OrderedDict|defaultdict|deque|namedtuple|TypedDict)$")
+)
+
+; When the type is a generic type with one identifier
+(function_definition
+  parameters: (parameters
+    (typed_parameter
+      type: (type
+              (generic_type
+                (identifier) @type_identifier))))
+
+  (#not-match? @type_identifier "^(str|int|float|bool|list|dict|tuple|set|frozenset|complex|bytes|bytearray|memoryview|range|slice|object|type|NoneType|List|Dict|Tuple|Set|FrozenSet|Union|Optional|Any|Callable|Iterable|Iterator|Generator|Coroutine|AsyncIterable|AsyncIterator|Awaitable|ContextManager|Pattern|Match|TypeVar|Generic|Sequence|Mapping|MutableMapping|MutableSequence|ByteString|Reversible|Sized|Container|Collection|AbstractSet|MutableSet|KeysView|ItemsView|ValuesView|Hashable|Sized|SupportsInt|SupportsFloat|SupportsComplex|SupportsBytes|SupportsAbs|SupportsRound|ChainMap|Counter|OrderedDict|defaultdict|deque|namedtuple|TypedDict)$")
+)
+
+; When the generic type has type parameters with one identifier
+(function_definition
+  parameters: (parameters
+    (typed_parameter
+      type: (type
+              (generic_type
+                (identifier)
+                (type_parameter
+                  (type
+                    (identifier) @type_identifier))))))
+
+  (#not-match? @type_identifier "^(str|int|float|bool|list|dict|tuple|set|frozenset|complex|bytes|bytearray|memoryview|range|slice|object|type|NoneType|List|Dict|Tuple|Set|FrozenSet|Union|Optional|Any|Callable|Iterable|Iterator|Generator|Coroutine|AsyncIterable|AsyncIterator|Awaitable|ContextManager|Pattern|Match|TypeVar|Generic|Sequence|Mapping|MutableMapping|MutableSequence|ByteString|Reversible|Sized|Container|Collection|AbstractSet|MutableSet|KeysView|ItemsView|ValuesView|Hashable|Sized|SupportsInt|SupportsFloat|SupportsComplex|SupportsBytes|SupportsAbs|SupportsRound|ChainMap|Counter|OrderedDict|defaultdict|deque|namedtuple|TypedDict)$")
+)
+
+; When the return type is a simple identifier
+(function_definition
+  return_type: (type
+    (identifier) @type_identifier)
+  (#not-match? @type_identifier "^(str|int|float|bool|list|dict|tuple|set|frozenset|complex|bytes|bytearray|memoryview|range|slice|object|type|NoneType|List|Dict|Tuple|Set|FrozenSet|Union|Optional|Any|Callable|Iterable|Iterator|Generator|Coroutine|AsyncIterable|AsyncIterator|Awaitable|ContextManager|Pattern|Match|TypeVar|Generic|Sequence|Mapping|MutableMapping|MutableSequence|ByteString|Reversible|Sized|Container|Collection|AbstractSet|MutableSet|KeysView|ItemsView|ValuesView|Hashable|Sized|SupportsInt|SupportsFloat|SupportsComplex|SupportsBytes|SupportsAbs|SupportsRound|ChainMap|Counter|OrderedDict|defaultdict|deque|namedtuple|TypedDict)$")
+)
+
+; When the return type is a generic type with one identifier
+(function_definition
+  return_type: (type
+    (generic_type
+      (identifier) @type_identifier))
+  (#not-match? @type_identifier "^(str|int|float|bool|list|dict|tuple|set|frozenset|complex|bytes|bytearray|memoryview|range|slice|object|type|NoneType|List|Dict|Tuple|Set|FrozenSet|Union|Optional|Any|Callable|Iterable|Iterator|Generator|Coroutine|AsyncIterable|AsyncIterator|Awaitable|ContextManager|Pattern|Match|TypeVar|Generic|Sequence|Mapping|MutableMapping|MutableSequence|ByteString|Reversible|Sized|Container|Collection|AbstractSet|MutableSet|KeysView|ItemsView|ValuesView|Hashable|Sized|SupportsInt|SupportsFloat|SupportsComplex|SupportsBytes|SupportsAbs|SupportsRound|ChainMap|Counter|OrderedDict|defaultdict|deque|namedtuple|TypedDict)$")
+)
+
+; When the generic type has type parameters with one identifier
+(function_definition
+  return_type: (type
+    (generic_type
+      (identifier)
+      (type_parameter
+        (type
+          (identifier) @type_identifier))))
+  (#not-match? @type_identifier "^(str|int|float|bool|list|dict|tuple|set|frozenset|complex|bytes|bytearray|memoryview|range|slice|object|type|NoneType|List|Dict|Tuple|Set|FrozenSet|Union|Optional|Any|Callable|Iterable|Iterator|Generator|Coroutine|AsyncIterable|AsyncIterator|Awaitable|ContextManager|Pattern|Match|TypeVar|Generic|Sequence|Mapping|MutableMapping|MutableSequence|ByteString|Reversible|Sized|Container|Collection|AbstractSet|MutableSet|KeysView|ItemsView|ValuesView|Hashable|Sized|SupportsInt|SupportsFloat|SupportsComplex|SupportsBytes|SupportsAbs|SupportsRound|ChainMap|Counter|OrderedDict|defaultdict|deque|namedtuple|TypedDict)$")
+)
+            """)
+        },
+        "java": {
+            "method_declaration": dedent("""
+; Method parameters
+(method_declaration
+  (formal_parameters
+    (formal_parameter
+    	(type_identifier) @a
+    )
+  )
+)
+
+; Return type
+(method_declaration
+  (type_identifier) @b
+)
+            """)
+        }
     },
-    
-    "python": {
-        "import_query": """(import_from_statement\n  (dotted_name) ; skip the first (this is the module)\n  (dotted_name\n    (identifier) @importa))\n\n(import_statement\n    (dotted_name\n        (identifier) @importb ))""",
-        "function_declartion": """(\n    (function_definition\n        (parameters \n            (_ \n                (type) @a\n                (#not-match? @a "^(str|int|float|bool|list|dict|tuple)$")\n            )\n        )\n    )\n)\n\n(\n    (function_definition\n        (type) @b\n        (#not-match? @b "^(str|int|float|bool|list|dict|tuple)$")\n    )\n)"""
+    "import_queries": {
+        "python": dedent("""
+(import_from_statement
+  (dotted_name) ; skip the first (this is the module)
+  (dotted_name
+    (identifier) @importa))
+
+(import_statement
+    (dotted_name
+        (identifier) @importb ))
+        """),
+        "java": dedent("""
+(import_declaration
+  (scoped_identifier
+    (identifier) @import))
+        """)
     }
 }
 SEP_REGEX = r"[\\/]"
@@ -92,12 +209,18 @@ def get_symbols_for_snippet(text: str) -> List[str]:
     return symbols
 
 
-# Need fix
-def get_tree_sitter_query(language: str, query_type: str):
-    if language == "java":
-        return JAVA.query(QUERIES[language][query_type])
-    elif language == "python":
-        return PYTHON.query(QUERIES[language][query_type])
+# Checked
+def get_tree_sitter_query(query_type: str, language: str, node: Optional[str]):
+    if query_type == "root_path_context_queries":
+        if language == "java":
+            return JAVA.query(QUERIES[query_type][language][node])
+        elif language == "python":
+            return PYTHON.query(QUERIES[query_type][language][node])
+    elif query == "import_queries":
+        if language == "java":
+            return JAVA.query(QUERIES[query_type][language])
+        elif language == "python":
+            return PYTHON.query(QUERIES[query_type][language])
 
 # Checked
 def get_tree_path_at_cursor(ast: Tree, cursor_index: Point) -> List[Node]:

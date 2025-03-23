@@ -78,7 +78,7 @@ def retrieve_candidate_snippets(helper):
 
 
 # Checked
-def construct_autocomplete_prompt(helper):
+def get_all_snippets(helper):
     lsp_snippets, import_snippets, root_path_context_snippets, snippets = (
         retrieve_candidate_snippets(helper)
     )

@@ -16,7 +16,7 @@ from pydantic import BaseModel
 from tree_sitter import Point
 
 from helper import Helper
-from utils import construct_autocomplete_prompt, render_prompt
+from utils import get_all_snippets, render_prompt
 
 multilspy_logger = MultilspyLogger()
 logger = logging.Logger(name="prompt_builder", level=logging.DEBUG)
@@ -45,9 +45,7 @@ class PromptBuilder:
         log_steps: int = 1,
     ):
         self.df = pd.read_json(dataset_jsonl_path, lines=True)
-        # self.df["condition"] = self.df["metadata"].apply(lambda x: x["task_id"] == "project_cc_python/207")
-        # self.df = self.df[self.df["condition"]]
-        self.df = self.df[35:36]
+        self.df = self.df[:1]
         self.repos_storage = repos_storage
         self.output_path = output_path
         self.log_path = log_path
@@ -101,7 +99,7 @@ class PromptBuilder:
                         import_snippets,
                         root_path_context_snippets,
                         snippets,
-                    ) = construct_autocomplete_prompt(helper)
+                    ) = get_all_snippets(helper)
                     prompt, prefix, suffix, completion_options = render_prompt(
                         snippets, helper
                     )
@@ -143,10 +141,10 @@ class PromptBuilder:
 
         self.store_df(outputs, self.output_path)
 
-    def store_df(self, updates, path):
+    def store_df(self, updates: List[BuilderOutput], path: str):
         df = self.df.copy()[: len(updates)]
         df.reset_index(drop=True, inplace=True)
-        additional_col = pd.DataFrame([item.dict() for item in updates])
+        additional_col = pd.DataFrame([item.model_dump_json() for item in updates])
         df = pd.concat([df, additional_col], axis=1)
         dir_path = os.path.dirname(path)
         if not os.path.exists(dir_path):
