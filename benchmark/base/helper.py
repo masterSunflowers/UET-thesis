@@ -1,9 +1,9 @@
 from typing import NamedTuple
 from tree_sitter import Point
 import os
-from continue_dev.common_funcs import get_tree_path_at_cursor, get_ast
-from continue_dev.utils import count_tokens
-from continue_dev.lsp_service import point2index
+from common_funcs import get_tree_path_at_cursor, get_ast
+from utils import count_tokens
+from lsp_service import point2index
 
 
 class Options(NamedTuple):

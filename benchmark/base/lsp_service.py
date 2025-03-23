@@ -9,7 +9,7 @@ from multilspy import SyncLanguageServer
 from multilspy.multilspy_logger import MultilspyLogger
 from tree_sitter import Node, Point
 
-from continue_dev.common_funcs import (
+from common_funcs import (
     FUNCTION_BLOCK_NODE_TYPES,
     FUNCTION_DECLARATION_NODE_TYPES,
     find_children,

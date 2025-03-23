@@ -1,6 +1,6 @@
-from continue_dev.lsp_service import LSPService
+from lsp_service import LSPService
 from tree_sitter import Node
-from continue_dev.common_funcs import get_tree_sitter_query, TYPES_TO_USE
+from common_funcs import get_tree_sitter_query, TYPES_TO_USE
 
 
 class RootPathContextService:

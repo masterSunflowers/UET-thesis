@@ -15,12 +15,12 @@ from multilspy.multilspy_logger import MultilspyLogger
 from pydantic import BaseModel
 from tree_sitter import Point
 
-from continue_dev.helper import Helper
-from continue_dev.utils import construct_autocomplete_prompt, render_prompt
+from helper import Helper
+from utils import construct_autocomplete_prompt, render_prompt
 
 multilspy_logger = MultilspyLogger()
 logger = logging.Logger(name="prompt_builder", level=logging.DEBUG)
-logger.addHandler(logging.FileHandler(filename="log/prompt_builder.log"))
+logger.addHandler(logging.FileHandler(filename="prompt_builder.log"))
 
 class BuilderOutput(BaseModel):
     model_name: str

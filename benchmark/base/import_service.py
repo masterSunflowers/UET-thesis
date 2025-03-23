@@ -1,6 +1,6 @@
 import os
-from continue_dev.lsp_service import LSPService
-from continue_dev.common_funcs import (
+from lsp_service import LSPService
+from common_funcs import (
     get_ast,
     get_tree_sitter_query,
     TOP_LEVEL_KEY_WORDS,

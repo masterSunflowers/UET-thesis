@@ -4,7 +4,7 @@ from typing import Optional, List
 import tree_sitter
 import tree_sitter_java as tsjava
 import tree_sitter_python as tspython
-from transformers import LlamaTokenizerFast
+from transformers import AutoTokenizer
 from tree_sitter import Node, Point, Tree
 from pydantic import BaseModel
 
@@ -40,7 +40,7 @@ FUNCTION_BLOCK_NODE_TYPES = ["block", "statement_block"]
 JAVA_PARSER = tree_sitter.Parser(language=JAVA)
 PYTHON_PARSER = tree_sitter.Parser(language=PYTHON)
 TOP_LEVEL_KEY_WORDS = {"java": ["class", "function"], "python": ["def", "class"]}
-TOKENIZER = LlamaTokenizerFast.from_pretrained("hf-internal-testing/llama-tokenizer")
+TOKENIZER = AutoTokenizer.from_pretrained("Salesforce/codegen-6B-mono")
 TYPES_TO_USE = {"program", "function_declaration", "method_definition"}
 QUERIES = {
     "java": {

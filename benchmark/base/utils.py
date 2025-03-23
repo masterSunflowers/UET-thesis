@@ -3,7 +3,7 @@ from typing import List, NamedTuple
 
 from tree_sitter import Point
 
-from continue_dev.common_funcs import (
+from common_funcs import (
     COMMON_STOPS,
     LANGUAGE_COMMENT_SYMBOL,
     SEP_REGEX,
@@ -12,9 +12,9 @@ from continue_dev.common_funcs import (
     get_symbols_for_snippet,
     read_range_in_file,
 )
-from continue_dev.import_service import ImportService
-from continue_dev.lsp_service import LSPService
-from continue_dev.root_path_context_service import RootPathContextService
+from import_service import ImportService
+from lsp_service import LSPService
+from root_path_context_service import RootPathContextService
 
 Snippet = NamedTuple("Snippet")
 
