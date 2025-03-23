@@ -20,19 +20,19 @@ Snippet = NamedTuple("Snippet")
 
 
 # Checked
-def get_extra_snippets(helper):
+def get_ide_snippets(helper):
     lsp_service = LSPService(
         repo_dir=helper.repo_dir,
         language_server=helper.language_server,
         language=helper.language,
     )
-    extra_snippets = lsp_service.get_definition_from_lsp(
-        rev_file_path=helper.relative_path,
+    ide_snippets = lsp_service.get_definition_from_lsp(
+        file_path=helper.file_path,
         prefix=helper.full_prefix,
         suffix=helper.full_suffix,
         cursor_index=helper.cursor_index,
     )
-    return extra_snippets
+    return ide_snippets
 
 
 # Checked
@@ -66,7 +66,7 @@ def get_context_for_path(helper):
 
 # Checked
 def retrieve_candidate_snippets(helper):
-    lsp_snippets = get_extra_snippets(helper)
+    lsp_snippets = get_ide_snippets(helper)
     import_snippets = get_snippet_from_import_definitions(helper)
     root_path_context_snippets = get_context_for_path(helper)
     snippets = [*lsp_snippets, *import_snippets, *root_path_context_snippets]
