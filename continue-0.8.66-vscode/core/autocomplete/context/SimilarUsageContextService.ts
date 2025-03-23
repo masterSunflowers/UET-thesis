@@ -3,17 +3,16 @@ import {
     AutocompleteSnippetType,
 } from "../snippets/types";
 import { IDE } from "../..";
-import { Range } from "../../index";
 import { GetLspDefinitionsFunction } from "../types";
 import { AutocompleteLanguageInfo } from "../constants/AutocompleteLanguageInfo";
 import { getWindowArroundCursor } from "./ranking";
-import { LlamaAsyncEncoder } from "../../llm/asyncEncoder";
-
+import { GPTAsyncEncoder  } from "../../llm/asyncEncoder";
 
 export class SimilarUsageContextService {
     // I hashcode here for the early development stage, 128 is the max chunk size when Continue indexing (chunking code) for default
     private maxChunkSize = 128;
-    private llamaTokenizer = new LlamaAsyncEncoder();
+
+    private gptTokenizer = new GPTAsyncEncoder()
 
     async retrieve(
         filepath: string,
@@ -31,7 +30,7 @@ export class SimilarUsageContextService {
             if (!symbol || !usages) continue;
             // Get window around the usage of the function
             for (const usage of usages) {
-                const window = await getWindowArroundCursor(usage.range.start, fileLines, this.llamaTokenizer, this.maxChunkSize);
+                const window = await getWindowArroundCursor(usage.range.start, fileLines, this.gptTokenizer, this.maxChunkSize);
                 snippets.push({
                     filepath: usage.filepath,
                     content: window,
