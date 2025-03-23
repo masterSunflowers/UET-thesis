@@ -5,7 +5,7 @@ import {
     AutocompleteSnippetType,
 } from "../snippets/types";
 import { IDE } from "../..";
-import { GPTAsyncEncoder } from "../../llm/asyncEncoder";
+import { LlamaAsyncEncoder } from "../../llm/asyncEncoder";
 import { SqliteDb, DatabaseConnection } from "../../indexing/refreshIndex";
 import { jaccardSimilarity } from "./ranking";
 import { getWindowArroundCursor } from "./ranking";
@@ -15,7 +15,7 @@ export class SimilarCodeContextService {
     private maxChunkSize = 128;
     // I hashcode here for the early development stage, get top 10 similar code snippets
     private topK = 10;
-    private gptTokenizer = new GPTAsyncEncoder()
+    private llamaTokenizer = new LlamaAsyncEncoder();
 
     constructor(private ide: IDE) {
         this.ide = ide;
@@ -23,11 +23,11 @@ export class SimilarCodeContextService {
 
     async retrieve(cursor: Position, fileLines: string[]): Promise<AutocompleteCodeSnippet[]> {  
         try {
-            const queryText = await getWindowArroundCursor(cursor, fileLines, this.gptTokenizer, this.maxChunkSize);
-            const encodedQueryText = await this.gptTokenizer.encode(queryText);
+            const queryText = await getWindowArroundCursor(cursor, fileLines, this.llamaTokenizer, this.maxChunkSize);
+            const encodedQueryText = await this.llamaTokenizer.encode(queryText);
             const candidateSnippets = await this.query();
             const encodedCandidateSnippets = await Promise.all(candidateSnippets.map(async (snippet: any) => {
-                const encodedSnippet = await this.gptTokenizer.encode(snippet.content);
+                const encodedSnippet = await this.llamaTokenizer.encode(snippet.content);
                 const similarity = jaccardSimilarity(encodedQueryText, encodedSnippet);
                 return { ...snippet, encodedSnippet, similarity };
             }));
