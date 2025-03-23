@@ -12,10 +12,6 @@ class Options(NamedTuple):
     max_suffix_percentage: float
     sliding_window_size: int
     sliding_window_prefix_percentage: float
-    recently_edited_similarity_threshold: float
-    max_snippet_percentage: float
-    use_import: bool
-    use_root_path_context: bool
 
 
 class Helper:
@@ -28,15 +24,11 @@ class Helper:
     pruned_suffix = None
 
     options = Options(
-        prefix_percentage=0.85,
+        prefix_percentage=0.3,
         max_prompt_tokens=1024,
-        max_suffix_percentage=0.25,
+        max_suffix_percentage=0.2,
         sliding_window_size=500,
         sliding_window_prefix_percentage=0.75,
-        recently_edited_similarity_threshold=0.3,
-        max_snippet_percentage=0.6,
-        use_import=True,
-        use_root_path_context=False,
     )
 
     def __init__(
@@ -46,7 +38,7 @@ class Helper:
         cursor_index: Point,
         language_server,
         language: str = "java",
-        model_name: str = "deepseek-coder",
+        model_name: str = "codestral-latest",
     ):
         self.repo_dir = repo_dir
         self.language = language
@@ -65,9 +57,6 @@ class Helper:
         index = point2index(self.file_content, self.cursor_index)
         self.full_prefix = self.file_content[:index]
         self.full_suffix = self.file_content[index:]
-        self.max_snippet_tokens = int(
-            self.options.max_prompt_tokens * self.options.max_snippet_percentage
-        )
         self.pruned_prefix, self.pruned_suffix = self.prune_prefix_suffix()
         self.pruned_caret_window = self.pruned_prefix + self.pruned_suffix
 
