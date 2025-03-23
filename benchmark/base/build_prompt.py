@@ -120,6 +120,7 @@ class PromptBuilder:
             except Exception as e:
                 logger.error(f"Error occurs when handling {idx}")
                 logger.error(str(e))
+                raise e
                 logger.error("=" * 100)
                 outputs.append(
                     BuilderOutput(

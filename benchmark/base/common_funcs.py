@@ -210,13 +210,13 @@ def get_symbols_for_snippet(text: str) -> List[str]:
 
 
 # Checked
-def get_tree_sitter_query(query_type: str, language: str, node: Optional[str]):
+def get_tree_sitter_query(query_type: str, language: str, node: Optional[str] = None):
     if query_type == "root_path_context_queries":
         if language == "java":
             return JAVA.query(QUERIES[query_type][language][node])
         elif language == "python":
             return PYTHON.query(QUERIES[query_type][language][node])
-    elif query == "import_queries":
+    elif query_type == "import_queries":
         if language == "java":
             return JAVA.query(QUERIES[query_type][language])
         elif language == "python":

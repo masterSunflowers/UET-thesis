@@ -20,13 +20,13 @@ class RootPathContextService:
             case "program":
                 pass
             case "function_declaration":
-                query = get_tree_sitter_query(self.language, "function_declaration")
+                query = get_tree_sitter_query("root_path_context_queries", self.language, "function_declaration")
             case "method_declaration":
-                query = get_tree_sitter_query(self.language, "method_declaration")
+                query = get_tree_sitter_query("root_path_context_queries", self.language, "method_declaration")
             case "function_definition":
-                query = get_tree_sitter_query(self.language, "function_definition")
+                query = get_tree_sitter_query("root_path_context_queries", self.language, "function_definition")
             case "method_definition":
-                query = get_tree_sitter_query(self.language, "method_definition")
+                query = get_tree_sitter_query("root_path_context_queries", self.language, "method_definition")
             case _:
                 pass
 

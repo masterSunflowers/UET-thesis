@@ -18,7 +18,7 @@ class ImportService:
             language=language,
         )
         self.language = language
-        self.import_query = get_tree_sitter_query(self.language, "import_query")
+        self.import_query = get_tree_sitter_query("import_queries", self.language)
 
     # Checked
     def get_file_info(self, relative_path: str):

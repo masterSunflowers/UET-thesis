@@ -1,0 +1,18 @@
+Error occurs when handling 0
+get_tree_sitter_query() missing 1 required positional argument: 'node'
+====================================================================================================
+Error occurs when handling 0
+get_tree_sitter_query() missing 1 required positional argument: 'node'
+====================================================================================================
+Error occurs when handling 0
+get_tree_sitter_query() missing 1 required positional argument: 'node'
+====================================================================================================
+Error occurs when handling 0
+name 'query' is not defined
+====================================================================================================
+Error occurs when handling 0
+name 'query' is not defined
+Error occurs when handling 0
+'Options' object has no attribute 'use_root_path_context'
+Error occurs when handling 0
+'Helper' object has no attribute 'max_snippet_tokens'
