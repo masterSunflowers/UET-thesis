@@ -21,9 +21,9 @@ class ImportService:
         self.import_query = get_tree_sitter_query("import_queries", self.language)
 
     # Checked
-    def get_file_info(self, relative_path: str):
+    def get_file_info(self, file_path: str):
         try:
-            absolute_path = os.path.join(self.repo_dir, relative_path)
+            absolute_path = os.path.join(self.repo_dir, file_path)
             with open(absolute_path, "r", encoding="utf-8") as f:
                 content = f.read()
 
@@ -33,7 +33,7 @@ class ImportService:
             for var in results:
                 for node in results[var]:
                     type_def = self.lsp.execute_goto_provider(
-                        relative_path, node.start_point
+                        file_path, node.start_point
                     )
                     if type_def:
                         file_info["imports"][node.text.decode("utf-8")] = type_def
@@ -43,9 +43,9 @@ class ImportService:
             return None
 
     # Checked
-    def get_snippet_by_import(self, relative_path, full_prefix, full_suffix):
+    def get_snippet_by_import(self, file_path, full_prefix, full_suffix):
         import_snippets = []
-        file_info = self.get_file_info(relative_path)
+        file_info = self.get_file_info(file_path)
         if file_info and file_info["imports"]:
             imports = file_info["imports"]
             # Look for imports of any symbols around the current range

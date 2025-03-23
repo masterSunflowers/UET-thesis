@@ -1,5 +1,5 @@
 import os
-from typing import List, NamedTuple
+from typing import List, NamedTuple, Tuple
 
 from tree_sitter import Point
 
@@ -15,8 +15,39 @@ from common_funcs import (
 from import_service import ImportService
 from lsp_service import LSPService
 from root_path_context_service import RootPathContextService
-
+import random
+random.seed(42)
 Snippet = NamedTuple("Snippet")
+TOKEN_BUFFER = 10
+
+# Checked
+def get_all_snippets(helper) -> Tuple[List[Snippet]]:
+    ide_snippets = get_ide_snippets(helper)
+    import_snippets = get_snippet_from_import_definitions(helper)
+    root_path_context_snippets = get_root_path_context(helper)
+    return ide_snippets, import_snippets, root_path_context_snippets
+
+
+# Checked
+def render_prompt(snippet_payload, helper):
+    prefix = helper.pruned_prefix
+    suffix = helper.pruned_suffix
+
+    if (suffix == ""):
+        suffix = "\n"
+
+    snippets = get_snippets(helper, snippet_payload)
+
+    print("Snippets:")
+    print(snippets)
+    print("=" * 100)
+    print("=" * 100)
+
+    match helper.model_name:
+        case "deepseek-coder":
+            return deepseek_render_prompt(snippets, helper)
+        case "codestral-latest":
+            return codestral_render_prompt(snippets, helper)
 
 
 # Checked
@@ -35,7 +66,7 @@ def get_ide_snippets(helper):
     return ide_snippets
 
 
-# Checked
+# Need check
 def get_snippet_from_import_definitions(helper):
     import_service = ImportService(
         repo_dir=helper.repo_dir,
@@ -43,43 +74,56 @@ def get_snippet_from_import_definitions(helper):
         language=helper.language,
     )
     import_snippets = import_service.get_snippet_by_import(
-        relative_path=helper.relative_path,
+        file_path=helper.file_path,
         full_prefix=helper.full_prefix,
         full_suffix=helper.full_suffix,
     )
     return import_snippets
 
 
-# Checked
-def get_context_for_path(helper):
+def get_root_path_context(helper):
     root_path_context_service = RootPathContextService(
         repo_dir=helper.repo_dir,
         language_server=helper.language_server,
         language=helper.language,
     )
     snippets = root_path_context_service.get_snippet_by_root_path(
-        relative_path=helper.relative_path, tree_path=helper.tree_path
+        file_path=helper.file_path, tree_path=helper.tree_path
     )
 
     return snippets
 
 
-# Checked
-def retrieve_candidate_snippets(helper):
-    lsp_snippets = get_ide_snippets(helper)
-    import_snippets = get_snippet_from_import_definitions(helper)
-    root_path_context_snippets = get_context_for_path(helper)
-    snippets = [*lsp_snippets, *import_snippets, *root_path_context_snippets]
-    return lsp_snippets, import_snippets, root_path_context_snippets, snippets
+# Need check
+def get_snippets(helper, snippet_payload):
+    ide_snippets, import_snippets, root_path_context_snippets = snippet_payload
+
+    snippets = shuffle_array(filter_snippets_already_in_caret_window([
+        *root_path_context_snippets,
+        *import_snippets
+    ], helper.pruned_caret_window))
+
+    final_snippets = []
+
+    remaining_token_count = get_remaining_token_count(helper)
+
+    while (remaining_token_count > 0) and (len(snippets) > 0):
+        snippet = snippets.pop(0)
+        if (not snippet or not is_valid_snippet(snippet)):
+            continue
+
+        snippet_size = count_tokens(snippet["content"]) + TOKEN_BUFFER
+
+        if remaining_token_count >= snippet_size:
+            final_snippets.append(snippet)
+            remaining_token_count -= snippet_size
+    
+    return final_snippets
 
 
-# Checked
-def get_all_snippets(helper):
-    lsp_snippets, import_snippets, root_path_context_snippets, snippets = (
-        retrieve_candidate_snippets(helper)
-    )
-    return lsp_snippets, import_snippets, root_path_context_snippets, snippets
-
+def get_remaining_token_count(helper):
+    token_count = count_tokens(helper.pruned_caret_window)
+    return helper.options.max_prompt_tokens - token_count
 
 # Checked
 def filter_snippets_already_in_caret_window(snippets: List[Snippet], caret_window: str):
@@ -92,20 +136,14 @@ def filter_snippets_already_in_caret_window(snippets: List[Snippet], caret_windo
     )
 
 
-
-# Checked
-def jaccard_similarity(a: str, b: str) -> float:
-    a_set = get_symbols_for_snippet(a)
-    b_set = get_symbols_for_snippet(b)
-    union = len(a_set.union(b_set))
-    if union == 0:
-        return 0
-    return len(a_set.intersection(b_set)) / union
-
-
 # Checked
 def count_tokens(content: str) -> int:
     return len(TOKENIZER(content)["input_ids"])
+
+
+def shuffle_array(items: any):
+    random.shuffle(items)
+    return items
 
 
 def deepseek_render_prompt(snippets: List[Snippet], helper):
@@ -228,20 +266,6 @@ def shortest_relative_paths(paths: List[str]) -> List[str]:
 
 
 # Checked
-def render_prompt(snippets, helper):
-    print("Snippets:")
-    print(snippets)
-    print("=" * 100)
-    print("=" * 100)
-
-    match helper.model_name:
-        case "deepseek-coder":
-            return deepseek_render_prompt(snippets, helper)
-        case "codestral-latest":
-            return codestral_render_prompt(snippets, helper)
-
-
-# Checked
 def render_string_template(template, prefix, suffix, snippets, language, relative_path):
     # Format snippets as comments and prepend to prefix
     formatted_snippets = "\n".join(
@@ -266,7 +290,7 @@ def render_string_template(template, prefix, suffix, snippets, language, relativ
 
 
 # Checked
-def format_external_snippet(relative_path, content, language):
+def format_external_snippet(relative_path: str, content: str, language: str) -> str:
     comment = LANGUAGE_COMMENT_SYMBOL[language]
     lines = [
         f"{comment} Path: {os.path.basename(relative_path)}",
@@ -277,7 +301,7 @@ def format_external_snippet(relative_path, content, language):
 
 
 # Checked
-def get_last_n_path_parts(file_path, n):
+def get_last_n_path_parts(file_path: str, n: int) -> str:
     return os.path.join(os.path.split(file_path)[-n:])
 
 
@@ -291,3 +315,7 @@ def get_stop_tokens(completion_options):
     stop_tokens = completion_options["stop"] if "stop" in completion_options else []
     stop_tokens += COMMON_STOPS
     return stop_tokens
+
+
+def is_valid_snippet(snippet) -> bool:
+    return snippet["content"].strip() != ""

@@ -1,18 +1,16 @@
 Error occurs when handling 0
-get_tree_sitter_query() missing 1 required positional argument: 'node'
-====================================================================================================
+'class_declaration'
 Error occurs when handling 0
-get_tree_sitter_query() missing 1 required positional argument: 'node'
-====================================================================================================
+a bytes-like object is required, not 'NoneType'
 Error occurs when handling 0
-get_tree_sitter_query() missing 1 required positional argument: 'node'
-====================================================================================================
+'tuple' object has no attribute 'pruned_prefix'
 Error occurs when handling 0
-name 'query' is not defined
-====================================================================================================
+Random.shuffle() got an unexpected keyword argument 'random_state'
 Error occurs when handling 0
-name 'query' is not defined
+name 'get_remaining_token_count' is not defined
 Error occurs when handling 0
-'Options' object has no attribute 'use_root_path_context'
+name 'is_valid_snippet' is not defined
 Error occurs when handling 0
-'Helper' object has no attribute 'max_snippet_tokens'
+name 'lsp_snippets' is not defined
+Error occurs when handling 0
+name 'ide_snippets' is not defined

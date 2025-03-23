@@ -25,9 +25,7 @@ logger.addHandler(logging.FileHandler(filename="prompt_builder.log"))
 class BuilderOutput(BaseModel):
     model_name: str
     built_prompt: Optional[str]
-    lsp_snippets: Optional[List[Any]]
-    import_snippets: Optional[List[Any]]
-    root_path_context_snippets: Optional[List[Any]]
+    snippets: Any
     prefix: Optional[str]
     suffix: Optional[str]
     completion_options: Optional[Dict[str, List[str]]]
@@ -36,7 +34,7 @@ class BuilderOutput(BaseModel):
 class PromptBuilder:
     def __init__(
         self,
-        dataset_jsonl_path: str,
+        input_path: str,
         repos_storage: str,
         output_path: str,
         log_path: str,
@@ -44,8 +42,8 @@ class PromptBuilder:
         model_name: str,
         log_steps: int = 1,
     ):
-        self.df = pd.read_json(dataset_jsonl_path, lines=True)
-        self.df = self.df[:1]
+        self.df = pd.read_json(input_path, lines=True)
+        # self.df = self.df[:1]
         self.repos_storage = repos_storage
         self.output_path = output_path
         self.log_path = log_path
@@ -94,24 +92,21 @@ class PromptBuilder:
 
                 with helper.language_server.start_server():
                     print("Init server success!!!")
-                    (
-                        lsp_snippets,
-                        import_snippets,
-                        root_path_context_snippets,
-                        snippets,
-                    ) = get_all_snippets(helper)
+                    snippet_payload = get_all_snippets(helper)
+                    # ide_snippets, import_snippets, root_path_context_snippets = snippet_payload
                     prompt, prefix, suffix, completion_options = render_prompt(
-                        snippets, helper
+                        snippet_payload, helper
                     )
                     if prompt is None:
                         logger.warning(f"Encounter outlier at index {idx}")
                     outputs.append(
                         BuilderOutput(
                             model_name=self.model_name,
+                            # ide_snippets=ide_snippets,
+                            # import_snippets=import_snippets,
+                            # root_path_context_snippets=root_path_context_snippets,
+                            snippets=snippet_payload,
                             built_prompt=prompt,
-                            lsp_snippets=lsp_snippets,
-                            import_snippets=import_snippets,
-                            root_path_context_snippets=root_path_context_snippets,
                             prefix=prefix,
                             suffix=suffix,
                             completion_options=completion_options,
@@ -126,7 +121,7 @@ class PromptBuilder:
                     BuilderOutput(
                         model_name=self.model_name,
                         built_prompt=None,
-                        lsp_snippets=None,
+                        ide_snippets=None,
                         import_snippets=None,
                         root_path_context_snippets=None,
                         prefix=None,
@@ -145,7 +140,7 @@ class PromptBuilder:
     def store_df(self, updates: List[BuilderOutput], path: str):
         df = self.df.copy()[: len(updates)]
         df.reset_index(drop=True, inplace=True)
-        additional_col = pd.DataFrame([item.model_dump_json() for item in updates])
+        additional_col = pd.DataFrame([item.model_dump_json() for item in updates], columns=["builder_output"])
         df = pd.concat([df, additional_col], axis=1)
         dir_path = os.path.dirname(path)
         if not os.path.exists(dir_path):
@@ -155,7 +150,7 @@ class PromptBuilder:
 
 def main(args):
     prompt_builder = PromptBuilder(
-        dataset_jsonl_path=args.input_path,
+        input_path=args.input_path,
         repos_storage=args.repos_storage,
         output_path=args.output_path,
         log_path=args.log_path,

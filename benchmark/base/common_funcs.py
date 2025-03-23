@@ -39,7 +39,17 @@ JAVA_PARSER = tree_sitter.Parser(language=JAVA)
 PYTHON_PARSER = tree_sitter.Parser(language=PYTHON)
 TOP_LEVEL_KEY_WORDS = {"java": ["class", "function"], "python": ["def", "class", "\"\"\"#"]}
 TOKENIZER = AutoTokenizer.from_pretrained("Salesforce/codegen-6B-mono", token=os.getenv(""))
-TYPES_TO_USE = {"program", "function_declaration", "method_definition"}
+TYPES_TO_USE = {
+    "arrow_function",
+    "generator_function_declaration"
+    "program", 
+    "function_declaration",
+    "function_definition",
+    "method_definition",
+    "method_declaration",
+    "class_declaration",
+    "class_definition"
+}
 QUERIES = {
     "root_path_context_queries": {
         "python": {
@@ -210,18 +220,18 @@ def get_symbols_for_snippet(text: str) -> List[str]:
 
 
 # Checked
-def get_tree_sitter_query(query_type: str, language: str, node: Optional[str] = None):
+def get_tree_sitter_query(query_type: str, language: str, node_type: Optional[str] = None):
     if query_type == "root_path_context_queries":
         if language == "java":
-            return JAVA.query(QUERIES[query_type][language][node])
+            return JAVA.query(QUERIES[query_type][language][node_type]) if QUERIES[query_type][language].get(node_type, None) else None
         elif language == "python":
-            return PYTHON.query(QUERIES[query_type][language][node])
+            return PYTHON.query(QUERIES[query_type][language][node_type]) if QUERIES[query_type][language].get(node_type, None) else None
     elif query_type == "import_queries":
         if language == "java":
             return JAVA.query(QUERIES[query_type][language])
         elif language == "python":
             return PYTHON.query(QUERIES[query_type][language])
-
+    return None
 # Checked
 def get_tree_path_at_cursor(ast: Tree, cursor_index: Point) -> List[Node]:
     path = [ast.root_node]
