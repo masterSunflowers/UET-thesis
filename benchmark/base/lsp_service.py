@@ -205,6 +205,8 @@ class LSPService:
             return None
         else:
             lsf = lsf[0]
+        if lsf["absolutePath"].endswith(".class"):
+            return None
         definition_name_range = lsprange2irange(lsf["range"])
         content = read_range_in_file(lsf["absolutePath"], definition_name_range)
         definition_info = {

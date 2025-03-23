@@ -20,7 +20,7 @@ from utils import get_all_snippets, render_prompt
 
 multilspy_logger = MultilspyLogger()
 logger = logging.Logger(name="prompt_builder", level=logging.DEBUG)
-logger.addHandler(logging.FileHandler(filename="prompt_builder.log"))
+logger.addHandler(logging.FileHandler(filename="build_prompt.log"))
 
 class BuilderOutput(BaseModel):
     model_name: str
