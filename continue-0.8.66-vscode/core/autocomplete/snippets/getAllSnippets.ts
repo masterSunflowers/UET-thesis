@@ -21,7 +21,7 @@ export interface SnippetPayload {
 
 function racePromise<T>(promise: Promise<T[]>): Promise<T[]> {
   const timeoutPromise = new Promise<T[]>((resolve) => {
-    setTimeout(() => resolve([]),1000);
+    setTimeout(() => resolve([]),300);
   });
 
   return Promise.race([promise, timeoutPromise]);
@@ -110,8 +110,8 @@ export const getAllSnippets = async ({
     // ),
     racePromise(getDiffSnippets(ide)),
     racePromise(getClipboardSnippets(ide)),
-    contextRetrievalService.getSimilarCodeSnippets(helper),
-    contextRetrievalService.getSimilarUsageSnippets(helper, getDefinitionsFromLsp),
+    racePromise(contextRetrievalService.getSimilarCodeSnippets(helper)),
+    racePromise(contextRetrievalService.getSimilarUsageSnippets(helper, getDefinitionsFromLsp)),
   ]);
   const rootPathSnippets: AutocompleteCodeSnippet[] = [];
   const importDefinitionSnippets: AutocompleteCodeSnippet[] = [];

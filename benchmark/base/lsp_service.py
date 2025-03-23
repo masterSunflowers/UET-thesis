@@ -9,7 +9,7 @@ from multilspy import SyncLanguageServer
 from multilspy.multilspy_logger import MultilspyLogger
 from tree_sitter import Node, Point
 
-from continue_dev.common_funcs import (
+from common_funcs import (
     FUNCTION_BLOCK_NODE_TYPES,
     FUNCTION_DECLARATION_NODE_TYPES,
     find_children,
@@ -35,7 +35,7 @@ class LSPService:
 
     # Checked
     def get_definition_from_lsp(
-        self, rev_file_path: str, prefix: str, suffix: str, cursor_index: Point
+        self, file_path: str, prefix: str, suffix: str, cursor_index: Point
     ):
         content = prefix + ")" + suffix if prefix.endswith("(") else prefix + suffix
         try:
@@ -49,9 +49,9 @@ class LSPService:
                 return []
             results = []
             for node in reversed(tree_path):
-                definitions = self.get_definition_for_node(rev_file_path, node)
+                definitions = self.get_definition_for_node(file_path, node)
                 results.extend(definitions)
-            return list(map(lambda result: {**result, "score": 0.8}, results))
+            return results
         except Exception as e:
             print("Error getting definitions from LSP: ", e)
             return []
@@ -61,15 +61,8 @@ class LSPService:
         ranges = []
         try:
             match node.type:
-                case "call_expression" | "method_invocation" | "call":
-                    # print("Node content")
-                    # print(node.text.decode("utf-8"))
-                    # print("start point of node")
-                    # print(uri)
-                    # print(node.start_point)
+                case "call_expression":
                     func_def = self.execute_goto_provider(uri, node.start_point)
-                    # print("func definition")
-                    # print(func_def)
                     if not func_def:
                         return []
                     # Don't display a function of more than 15 lines
@@ -110,11 +103,11 @@ class LSPService:
 
                     type_defs = self.crawl_types(func_def)
                     ranges.extend(type_defs)
-                case "new_expression" | "object_creation_expression" | "call":
+                case "new_expression":
                     # In 'new MyClass(...)', "MyClass" is the classNameNode
                     class_name_node = None
                     for child in node.children:
-                        if child.type == "type_identifier":
+                        if child.type == "identifier":
                             class_name_node = child
 
                     class_def = self.execute_goto_provider(
@@ -203,14 +196,11 @@ class LSPService:
     # Checked
     def execute_goto_provider(self, file_path, position):
         start = time.time()
-
+        print("Execute goto provider for", file_path, "at", position, "...")
         lsf = self.language_server.request_definition(
             file_path, position.row, position.column
         )
         print("Language Server tooks:", time.time() - start, "s")
-        # print("Language Serve Feedback:")
-        # print(lsf)
-        # Check if language server feedback is empty
         if not lsf:
             return None
         else:

@@ -13,7 +13,7 @@ from tqdm import tqdm
 CWD = os.path.abspath(os.path.dirname(__file__))
 
 logger = logging.Logger("clone", level=logging.INFO)
-logger.addHandler(logging.FileHandler(os.path.join(CWD, "log", "clone.log")))
+logger.addHandler(logging.FileHandler(os.path.join(CWD, "clone.log")))
 
 
 def main(args):

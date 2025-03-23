@@ -183,7 +183,8 @@ export class CompletionProvider {
         helper,
       });
 
-      // console.log("Prompt:", prompt);
+      // console.log("Prompt:");
+      // console.log(prompt)
       // console.log("====================================================");
 
       // Completion

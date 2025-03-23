@@ -1,0 +1,16 @@
+Error occurs when handling 0
+'class_declaration'
+Error occurs when handling 0
+a bytes-like object is required, not 'NoneType'
+Error occurs when handling 0
+'tuple' object has no attribute 'pruned_prefix'
+Error occurs when handling 0
+Random.shuffle() got an unexpected keyword argument 'random_state'
+Error occurs when handling 0
+name 'get_remaining_token_count' is not defined
+Error occurs when handling 0
+name 'is_valid_snippet' is not defined
+Error occurs when handling 0
+name 'lsp_snippets' is not defined
+Error occurs when handling 0
+name 'ide_snippets' is not defined
