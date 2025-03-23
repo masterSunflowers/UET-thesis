@@ -7,6 +7,10 @@ import tree_sitter_python as tspython
 from transformers import AutoTokenizer
 from tree_sitter import Node, Point, Tree
 from pydantic import BaseModel
+import os
+import dotenv
+
+dotenv.load_dotenv(override=True)
 
 JAVA = tree_sitter.Language(tsjava.language())
 PYTHON = tree_sitter.Language(tspython.language())
@@ -23,24 +27,18 @@ TREE_SITTER_NODE_TYPES = {
     "type": [
         "class_declaration",
         "class_definition",
-        "interface_declaration",
-        "enum_declaration",
-        "record_declaration",
     ],
 }
 LANGUAGE_COMMENT_SYMBOL = {
     "java": "//",
     "python": "#",
-    "javascript": "//",
-    "typescript": "//",
-    "csharp": "//",
 }
 COMMON_STOPS = ["/src", "#- coding: utf-8", "```"]
 FUNCTION_BLOCK_NODE_TYPES = ["block", "statement_block"]
 JAVA_PARSER = tree_sitter.Parser(language=JAVA)
 PYTHON_PARSER = tree_sitter.Parser(language=PYTHON)
-TOP_LEVEL_KEY_WORDS = {"java": ["class", "function"], "python": ["def", "class"]}
-TOKENIZER = AutoTokenizer.from_pretrained("Salesforce/codegen-6B-mono")
+TOP_LEVEL_KEY_WORDS = {"java": ["class", "function"], "python": ["def", "class", "\"\"\"#"]}
+TOKENIZER = AutoTokenizer.from_pretrained("Salesforce/codegen-6B-mono", token=os.getenv(""))
 TYPES_TO_USE = {"program", "function_declaration", "method_definition"}
 QUERIES = {
     "java": {
@@ -57,12 +55,14 @@ SEP_REGEX = r"[\\/]"
 
 # Checked
 class IRange(BaseModel):
+    """Range in a file, from start_point to end_point"""
     start_point: Point
     end_point: Point
 
 
 # Checked
-def get_ast(content, language):
+def get_ast(content: str, language: str):
+    """Returns the AST of the given content in the given language"""
     if language == "java":
         parser = JAVA_PARSER
     elif language == "python":
@@ -78,7 +78,8 @@ def get_ast(content, language):
 
 
 # Checked
-def get_symbols_for_snippet(text):
+def get_symbols_for_snippet(text: str) -> List[str]:
+    """Get all symbols in the given text"""
     symbols = set(
         filter(
             lambda s: s != "",
@@ -91,15 +92,15 @@ def get_symbols_for_snippet(text):
     return symbols
 
 
-# Checked
+# Need fix
 def get_tree_sitter_query(language: str, query_type: str):
     if language == "java":
         return JAVA.query(QUERIES[language][query_type])
     elif language == "python":
         return PYTHON.query(QUERIES[language][query_type])
 
-
-def get_tree_path_at_cursor(ast: Tree, cursor_index: Point):
+# Checked
+def get_tree_path_at_cursor(ast: Tree, cursor_index: Point) -> List[Node]:
     path = [ast.root_node]
     while path[-1].child_count > 0:
         found_child = False
@@ -136,6 +137,7 @@ def find_children(node: Node, predicate, first_n: Optional[int] = None):
 
 # Checked
 def read_range_in_file(file_path: str, range: IRange):
+    """Reads a range of text from a file."""
     with open(file_path, "r") as f:
         lines = f.read().splitlines()
 
@@ -146,6 +148,7 @@ def read_range_in_file(file_path: str, range: IRange):
     return content
 
 
+# Need fix
 def find_type_identifiers(root_node: Node) -> List[Node]:
     return find_children(
         root_node,
@@ -159,6 +162,7 @@ def find_type_identifiers(root_node: Node) -> List[Node]:
     )
 
 
+# Checked
 def point2index(content: str, point: Point) -> int:
     content = content.replace("\r\n", "\n")
     lines = content.splitlines()
@@ -169,6 +173,7 @@ def point2index(content: str, point: Point) -> int:
     return index
 
 
+# Checked
 def lsprange2irange(lsprange: dict) -> IRange:
     return IRange(
         start_point=Point(
@@ -181,7 +186,7 @@ def lsprange2irange(lsprange: dict) -> IRange:
     )
 
 
-# Checked
+# Need fix
 def intersection(a: IRange, b: IRange) -> Optional[IRange]:
     start_row = max(a.start_point.row, b.start_point.row)
     end_row = min(a.end_point.row, b.end_point.row)
