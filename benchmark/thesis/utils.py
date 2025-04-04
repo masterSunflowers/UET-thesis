@@ -9,25 +9,84 @@ from common_funcs import (
     SEP_REGEX,
     TOKENIZER,
 )
-from import_service import ImportService
-from lsp_service import LSPService
-from root_path_context_service import RootPathContextService
+
+from similar_usage import SimilarUsageService
+
 import random
+
 random.seed(42)
 Snippet = NamedTuple("Snippet")
 TOKEN_BUFFER = 10
 
+
 # Checked
 def get_all_snippets(helper) -> Tuple[List[Snippet]]:
-    ide_snippets = get_ide_snippets(helper)
-    import_snippets = get_snippet_from_import_definitions(helper)
-    root_path_context_snippets = get_root_path_context(helper)
-    return ide_snippets, import_snippets, root_path_context_snippets
+    similar_usage_snippets = get_similar_usage_snippets(helper)
+    similar_code_snippets = get_similar_code_snippets(helper)
+
+    return similar_usage_snippets, similar_code_snippets
+
+def get_similar_code_snippets(helper):
+    return []
+
+
+def get_similar_usage_snippets(helper):
+    similar_usage_service = SimilarUsageService(
+        repo_dir=helper.repo_dir,
+        language_server=helper.language_server,
+        language=helper.language,
+    )
+
+    similar_usages = similar_usage_service.get_similar_usages(file_path=helper.file_path, prefix=helper.full_prefix, suffix=helper.full_suffix, cursor_index=helper.cursor_index)
+
+    similar_usage_snippets = []
+
+    for usage in similar_usages:
+        cursor = usage["range"].start_point
+        with open(usage["file_path"], "r") as f:
+            file_lines = f.readlines()
+        similar_usage_snippets.append(
+            get_window_around_cursor(cursor, file_lines, TOKENIZER, window_size=128)
+        )
+    return similar_usage_snippets
+
+
+def get_window_around_cursor(
+    cursor: Point, file_lines: List[str], tokenizer: any, window_size: int = 128
+) -> str:
+    start_line_no = cursor["row"]
+    end_line_no = cursor["row"] + 1
+    window = ""
+
+    while start_line_no >= 0 and end_line_no <= len(file_lines):
+        window = "\n".join(file_lines[start_line_no:end_line_no])
+        encoded_window = tokenizer(window)["input_ids"]
+        if len(encoded_window) > window_size:
+            break
+        start_line_no -= 1
+        end_line_no += 1
+
+    window = "\n".join(file_lines[start_line_no + 1 : end_line_no - 1])
+
+    while True:
+        encoded_window = tokenizer(window)["input_ids"]
+        if len(encoded_window) >= window_size or start_line_no < 0:
+            break
+        window = file_lines[start_line_no] + "\n" + window
+        start_line_no -= 1
+
+    while True:
+        encoded_window = tokenizer(window)["input_ids"]
+        if len(encoded_window) >= window_size or end_line_no >= len(file_lines):
+            break
+        window = window + "\n" + file_lines[end_line_no]
+        end_line_no += 1
+
+    return window
 
 
 # Checked
 def render_prompt(snippet_payload, helper):
-
     snippets = get_snippets(helper, snippet_payload)
 
     print("Snippets:")
@@ -42,80 +101,16 @@ def render_prompt(snippet_payload, helper):
             return codestral_render_prompt(snippets, helper)
 
 
-# Checked
-def get_ide_snippets(helper):
-    lsp_service = LSPService(
-        repo_dir=helper.repo_dir,
-        language_server=helper.language_server,
-        language=helper.language,
-    )
-    ide_snippets = lsp_service.get_definition_from_lsp(
-        file_path=helper.file_path,
-        prefix=helper.full_prefix,
-        suffix=helper.full_suffix,
-        cursor_index=helper.cursor_index,
-    )
-    return ide_snippets
-
-
-# Need check
-def get_snippet_from_import_definitions(helper):
-    import_service = ImportService(
-        repo_dir=helper.repo_dir,
-        language_server=helper.language_server,
-        language=helper.language,
-    )
-    import_snippets = import_service.get_snippet_by_import(
-        file_path=helper.file_path,
-        full_prefix=helper.full_prefix,
-        full_suffix=helper.full_suffix,
-    )
-    return import_snippets
-
-
-def get_root_path_context(helper):
-    root_path_context_service = RootPathContextService(
-        repo_dir=helper.repo_dir,
-        language_server=helper.language_server,
-        language=helper.language,
-    )
-    snippets = root_path_context_service.get_snippet_by_root_path(
-        file_path=helper.file_path, tree_path=helper.tree_path
-    )
-
-    return snippets
-
-
-# Need check
+# Fake to test flow
 def get_snippets(helper, snippet_payload):
-    ide_snippets, import_snippets, root_path_context_snippets = snippet_payload
-
-    snippets = shuffle_array(filter_snippets_already_in_caret_window([
-        *root_path_context_snippets,
-        *import_snippets
-    ], helper.pruned_caret_window))
-
-    final_snippets = []
-
-    remaining_token_count = get_remaining_token_count(helper)
-
-    while (remaining_token_count > 0) and (len(snippets) > 0):
-        snippet = snippets.pop(0)
-        if (not snippet or not is_valid_snippet(snippet)):
-            continue
-
-        snippet_size = count_tokens(snippet["content"]) + TOKEN_BUFFER
-
-        if remaining_token_count >= snippet_size:
-            final_snippets.append(snippet)
-            remaining_token_count -= snippet_size
-    
-    return final_snippets
+    similar_usage_snippets, similar_code_snippets = snippet_payload
+    return similar_usage_snippets
 
 
 def get_remaining_token_count(helper):
     token_count = count_tokens(helper.pruned_caret_window)
     return helper.options.max_prompt_tokens - token_count
+
 
 # Checked
 def filter_snippets_already_in_caret_window(snippets: List[Snippet], caret_window: str):
