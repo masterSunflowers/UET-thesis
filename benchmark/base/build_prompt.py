@@ -16,6 +16,7 @@ from multilspy.multilspy_config import MultilspyConfig
 from multilspy.multilspy_logger import MultilspyLogger
 from pydantic import BaseModel
 from tree_sitter import Point
+import logging
 
 from helper import Helper
 from utils import get_all_snippets, render_prompt
@@ -43,9 +44,11 @@ class PromptBuilder:
         language: str,
         model_name: str,
         log_steps: int = 1,
+        debug: bool = False
     ):
         self.df = pd.read_json(input_path, lines=True)
-        # self.df = self.df[:1]
+        if debug:
+            self.df = self.df.head()
         self.repos_storage = repos_storage
         self.output_path = output_path
         self.log_path = log_path
@@ -89,14 +92,14 @@ class PromptBuilder:
                     language=self.language,
                     model_name=self.model_name,
                 )
-                print("Helper is ready")
-                print(row["encode"])
+                logging.debug("Helper is ready")
+                logging.debug(row["encode"])
 
                 max_tries = 10
                 for i in range(max_tries):
                     try:
                         with helper.language_server.start_server():
-                            print("Init server success!!!")
+                            logging.debug("Init server success!!!")
                             snippet_payload = get_all_snippets(helper)
                             # ide_snippets, import_snippets, root_path_context_snippets = snippet_payload
                             prompt, prefix, suffix, completion_options = render_prompt(
@@ -124,8 +127,7 @@ class PromptBuilder:
                         raise e
                     break
             except Exception as e:
-                logger.error(f"Error occurs when handling {idx}")
-                logger.error(str(e))
+                logger.error(f"Error occurs when handling {idx}:\n{e}")
                 raise e
                 logger.error("=" * 100)
                 outputs.append(
@@ -167,7 +169,8 @@ def main(args):
         log_path=args.log_path,
         language=args.language,
         model_name=args.model_name,
-        log_steps=args.log_steps
+        log_steps=args.log_steps,
+        debug = args.debug
     )
     prompt_builder.build_prompt()
 
@@ -181,5 +184,6 @@ if __name__ == "__main__":
     parser.add_argument("-m", "--model", dest="model_name")
     parser.add_argument("-lang", "--language", dest="language", default="java")
     parser.add_argument("-lg", "--log-steps", dest="log_steps", type=int, default=1)
+    parser.add_argument("--debug", dest="debug", action="store_true", default=False)
     args = parser.parse_args()
     main(args)

@@ -9,6 +9,7 @@ from tree_sitter import Node, Point, Tree
 from pydantic import BaseModel
 import os
 import dotenv
+import logging
 
 dotenv.load_dotenv(override=True)
 
@@ -200,7 +201,7 @@ def get_ast(content: str, language: str):
         ast = parser.parse(bytes(content, encoding="utf-8"))
         return ast
     except Exception as e:
-        print(e)
+        logging.error(f"Get AST error:\n{e}")
         return None
 
 

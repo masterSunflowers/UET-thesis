@@ -1,7 +1,7 @@
 from lsp_service import LSPService
 from tree_sitter import Node
 from common_funcs import get_tree_sitter_query, TYPES_TO_USE
-
+import logging
 
 class RootPathContextService:
     # Checked
@@ -38,8 +38,8 @@ class RootPathContextService:
     # Checked
     def get_snippet_by_root_path(self, file_path, tree_path):
         snippets = []
-        print("Tree Path:")
-        print(tree_path)
+        logging.debug("Tree Path:")
+        logging.debug(tree_path)
         for ast_node in list(filter(lambda node: node.type in TYPES_TO_USE, tree_path)):
             new_snippets = self.get_snippet_for_node(file_path, ast_node)
             snippets.extend(new_snippets)

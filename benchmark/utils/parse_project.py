@@ -201,7 +201,6 @@ def get_definitions(file_path: str, tree: tree_sitter.Tree):
 
 def main(args):
     lst_repo = os.listdir(args.repos_dir)
-    print(lst_repo)
     for repo in tqdm(lst_repo):
         repo_dir = os.path.join(args.repos_dir, repo)
         all_class = []

@@ -13,6 +13,7 @@ from import_service import ImportService
 from lsp_service import LSPService
 from root_path_context_service import RootPathContextService
 import random
+import logging
 random.seed(42)
 Snippet = NamedTuple("Snippet")
 TOKEN_BUFFER = 10
@@ -30,10 +31,10 @@ def render_prompt(snippet_payload, helper):
 
     snippets = get_snippets(helper, snippet_payload)
 
-    print("Snippets:")
-    print(snippets)
-    print("=" * 100)
-    print("=" * 100)
+    logging.debug("Snippets:")
+    logging.debug(snippets)
+    logging.debug("=" * 100)
+    logging.debug("=" * 100)
 
     match helper.model_name:
         case "deepseek-coder":

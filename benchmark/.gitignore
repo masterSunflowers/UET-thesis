@@ -5,3 +5,5 @@ log
 jdt-ls
 .env
 dev
+**/*.log
+**/*.sh

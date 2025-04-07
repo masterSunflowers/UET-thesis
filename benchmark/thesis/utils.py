@@ -1,119 +1,79 @@
 import os
-from typing import List, NamedTuple, Tuple
-
-from tree_sitter import Point
-
+from typing import List, TypeVar
 from common_funcs import (
     COMMON_STOPS,
     LANGUAGE_COMMENT_SYMBOL,
     SEP_REGEX,
     TOKENIZER,
+    Point,
 )
+import logging
 
-from similar_usage import SimilarUsageService
+logger = logging.getLogger("utils")
 
-import random
-
-random.seed(42)
-Snippet = NamedTuple("Snippet")
-TOKEN_BUFFER = 10
-
-
-# Checked
-def get_all_snippets(helper) -> Tuple[List[Snippet]]:
-    similar_usage_snippets = get_similar_usage_snippets(helper)
-    similar_code_snippets = get_similar_code_snippets(helper)
-
-    return similar_usage_snippets, similar_code_snippets
-
-def get_similar_code_snippets(helper):
-    return []
-
-
-def get_similar_usage_snippets(helper):
-    similar_usage_service = SimilarUsageService(
-        repo_dir=helper.repo_dir,
-        language_server=helper.language_server,
-        language=helper.language,
-    )
-
-    similar_usages = similar_usage_service.get_similar_usages(file_path=helper.file_path, prefix=helper.full_prefix, suffix=helper.full_suffix, cursor_index=helper.cursor_index)
-
-    similar_usage_snippets = []
-
-    for usage in similar_usages:
-        cursor = usage["range"].start_point
-        with open(usage["file_path"], "r") as f:
-            file_lines = f.readlines()
-        similar_usage_snippets.append(
-            get_window_around_cursor(cursor, file_lines, TOKENIZER, window_size=128)
-        )
-    return similar_usage_snippets
+Snippet = TypeVar("Snippet")
 
 
 def get_window_around_cursor(
-    cursor: Point, file_lines: List[str], tokenizer: any, window_size: int = 128
+    cursor: Point,
+    file_lines: List[str],
+    window_size: int = 128,
+    tokenizer: any = TOKENIZER,
 ) -> str:
-    start_line_no = cursor["row"]
-    end_line_no = cursor["row"] + 1
-    window = ""
+    """
+    Get a window of text around the cursor position that fits within the token window size.
 
-    while start_line_no >= 0 and end_line_no <= len(file_lines):
-        window = "\n".join(file_lines[start_line_no:end_line_no])
-        encoded_window = tokenizer(window)["input_ids"]
-        if len(encoded_window) > window_size:
+    Args:
+        cursor (Point): Current cursor position containing row information
+        file_lines (List[str]): List of file lines
+        tokenizer: Tokenizer instance to encode text
+        window_size (int): Maximum number of tokens allowed in window
+
+    Returns:
+        str: Text window around cursor within token limit
+    """
+    current_row = cursor.row
+    start_line = current_row
+    end_line = current_row + 1
+    max_line = len(file_lines)
+
+    # Initial expansion to find boundaries
+    while start_line >= 0 and end_line <= max_line:
+        current_window = "\n".join(file_lines[start_line:end_line])
+        if len(tokenizer(current_window)["input_ids"]) > window_size:
             break
-        start_line_no -= 1
-        end_line_no += 1
+        start_line -= 1
+        end_line += 1
 
-    window = "\n".join(file_lines[start_line_no + 1 : end_line_no - 1])
+    # Adjust boundaries to last valid window
+    start_line += 1
+    end_line -= 1
+    window = "\n".join(file_lines[start_line:end_line])
 
-    while True:
-        encoded_window = tokenizer(window)["input_ids"]
-        if len(encoded_window) >= window_size or start_line_no < 0:
+    # Fine-tune the window by adding lines one at a time
+    def can_add_line(test_window: str) -> bool:
+        return len(tokenizer(test_window)["input_ids"]) < window_size
+
+    # Try to add lines above
+    for line_no in range(start_line - 1, -1, -1):
+        test_window = file_lines[line_no] + "\n" + window
+        if not can_add_line(test_window):
             break
-        window = file_lines[start_line_no] + "\n" + window
-        start_line_no -= 1
+        window = test_window
 
-    while True:
-        encoded_window = tokenizer(window)["input_ids"]
-        if len(encoded_window) >= window_size or end_line_no >= len(file_lines):
+    # Try to add lines below
+    for line_no in range(end_line, max_line):
+        test_window = window + "\n" + file_lines[line_no]
+        if not can_add_line(test_window):
             break
-        window = window + "\n" + file_lines[end_line_no]
-        end_line_no += 1
+        window = test_window
 
     return window
 
 
-# Checked
-def render_prompt(snippet_payload, helper):
-    snippets = get_snippets(helper, snippet_payload)
-
-    print("Snippets:")
-    print(snippets)
-    print("=" * 100)
-    print("=" * 100)
-
-    match helper.model_name:
-        case "deepseek-coder":
-            return deepseek_render_prompt(snippets, helper)
-        case "codestral-latest":
-            return codestral_render_prompt(snippets, helper)
-
-
-# Fake to test flow
-def get_snippets(helper, snippet_payload):
-    similar_usage_snippets, similar_code_snippets = snippet_payload
-    return similar_usage_snippets
-
-
-def get_remaining_token_count(helper):
-    token_count = count_tokens(helper.pruned_caret_window)
-    return helper.options.max_prompt_tokens - token_count
-
-
-# Checked
-def filter_snippets_already_in_caret_window(snippets: List[Snippet], caret_window: str):
+def filter_snippets_already_in_caret_window(
+    snippets: List[Snippet], caret_window: str
+) -> List[Snippet]:
     return list(
         filter(
             lambda s: s["content"].strip() != ""
@@ -123,137 +83,76 @@ def filter_snippets_already_in_caret_window(snippets: List[Snippet], caret_windo
     )
 
 
-# Checked
 def count_tokens(content: str) -> int:
     return len(TOKENIZER(content)["input_ids"])
-
-
-def shuffle_array(items: any):
-    random.shuffle(items)
-    return items
-
-
-def deepseek_render_prompt(snippets: List[Snippet], helper):
-    prefix = helper.pruned_prefix
-    suffix = helper.pruned_suffix
-    deepseek_fim_template = {
-        "template": "<｜fim▁begin｜>{prefix}<｜fim▁hole｜>{suffix}<｜fim▁end｜>",
-        "completionOptions": {
-            "stop": [
-                "<｜fim▁begin｜>",
-                "<｜fim▁hole｜>",
-                "<｜fim▁end｜>",
-                "//",
-                "<｜end▁of▁sentence｜>",
-            ],
-        },
-    }
-    template = deepseek_fim_template["template"]
-    completion_options = deepseek_fim_template["completionOptions"]
-    prompt, prefix = render_string_template(
-        template, prefix, suffix, snippets, helper.language, helper.relative_path
-    )
-
-    stop_tokens = get_stop_tokens(completion_options)
-
-    completion_options = {
-        **completion_options,
-        "stop": stop_tokens,
-    }
-
-    return prompt, prefix, suffix, completion_options
-
-
-def codestral_render_prompt(snippets: List[Snippet], helper):
-    prefix = helper.pruned_prefix
-    suffix = helper.pruned_suffix
-
-    def compile_prefix_suffix(
-        prefix: str, suffix: str, filepath: str, snippets: List[Snippet]
-    ):
-        if len(snippets) == 0:
-            if len(suffix.strip()) == 0 and len(prefix.strip()) == 0:
-                return [f"+++++ {get_last_n_path_parts(filepath, 2)}\n{prefix}", suffix]
-            else:
-                return [prefix, suffix]
-        relative_paths = shortest_relative_paths(
-            [snippet["relative_path"] for snippet in snippets] + [filepath]
-        )
-        other_files = "\n\n".join(
-            [
-                f"+++++ {relative_paths[i]}\n{snippet['content']}"
-                for i, snippet in enumerate(snippets)
-            ]
-        )
-        return [f"{other_files}\n\n+++++ {relative_paths[-1]}\n{prefix}", suffix]
-
-    def template(prefix: str, suffix: str):
-        return f"[SUFFIX]{suffix}[PREFIX]{prefix}"
-
-    completion_options = {
-        "stop": ["[PREFIX]", "[SUFFIX]", "/src/", "#- coding: utf-8", "```"],
-    }
-    prefix, suffix = compile_prefix_suffix(
-        prefix, suffix, helper.relative_path, snippets
-    )
-    prompt = template(prefix, suffix)
-    return prompt, prefix, suffix, completion_options
 
 
 def shortest_relative_paths(paths: List[str]) -> List[str]:
     if len(paths) == 0:
         return []
+    
+    short_paths = [
+        os.path.join(*path.split(os.sep)[-2:]) for path in paths  # Get the last two parts of the path
+    ]
+    logger.debug(short_paths)
+    return short_paths
+    # parts_lengths = [len(path.split(SEP_REGEX)) for path in paths]
+    # current_relative_paths = [os.path.basename(path) for path in paths]
+    # logger.debug(f"Current relative paths: {current_relative_paths}")
+    # current_num_parts = [1 for _ in paths]
+    # is_duplicated = []
+    # for i, x in enumerate(current_relative_paths):
+    #     is_duplicated.append(
+    #         len(
+    #             [
+    #                 (j, y)
+    #                 for j, y in enumerate(current_relative_paths)
+    #                 if x == y and paths[i] != paths[j]
+    #             ]
+    #         )
+    #         > 1
+    #     )
+    # logger.debug(f"Is duplicated: {is_duplicated}")
+    # while any(is_duplicated):
+    #     for i, is_dup in enumerate(is_duplicated):
+    #         if is_dup:
+    #             first_duplicated_path = current_relative_paths[i]
+    #             break
+    #     else:
+    #         break
 
-    parts_lengths = [len(path.split(SEP_REGEX)) for path in paths]
-    current_relative_paths = [os.path.basename(path) for path in paths]
-    current_num_parts = [1 for _ in paths]
-    is_duplicated = []
-    for i, x in enumerate(current_relative_paths):
-        is_duplicated.append(
-            len(
-                [
-                    (j, y)
-                    for j, y in enumerate(current_relative_paths)
-                    if x == y and paths[i] != paths[j]
-                ]
-            )
-            > 1
-        )
+    #     for i, x in current_relative_paths:
+    #         if x == first_duplicated_path:
+    #             current_num_parts[i] += 1
+    #             current_relative_paths[i] = get_last_n_path_parts(
+    #                 paths[i], current_num_parts[i]
+    #             )
 
-    while any(is_duplicated):
-        for i, is_dup in enumerate(is_duplicated):
-            if is_dup:
-                first_duplicated_path = current_relative_paths[i]
-                break
-        else:
-            break
-
-        for i, x in current_relative_paths:
-            if x == first_duplicated_path:
-                current_num_parts[i] += 1
-                current_relative_paths[i] = get_last_n_path_parts(
-                    paths[i], current_num_parts[i]
-                )
-
-        for i, x in is_duplicated:
-            if x:
-                is_duplicated[i] = (
-                    current_num_parts[i] < parts_lengths[i]
-                    and len(
-                        list(
-                            filter(
-                                lambda y: y == current_relative_paths[i],
-                                current_relative_paths,
-                            )
-                        )
-                    )
-                    > 1
-                )
-    return current_relative_paths
+    #     for i, x in is_duplicated:
+    #         if x:
+    #             is_duplicated[i] = (
+    #                 current_num_parts[i] < parts_lengths[i]
+    #                 and len(
+    #                     list(
+    #                         filter(
+    #                             lambda y: y == current_relative_paths[i],
+    #                             current_relative_paths,
+    #                         )
+    #                     )
+    #                 )
+    #                 > 1
+    #             )
+    # return current_relative_paths
 
 
-# Checked
-def render_string_template(template, prefix, suffix, snippets, language, relative_path):
+def render_string_template(
+    template: str,
+    prefix: str,
+    suffix: str,
+    snippets: List[Snippet],
+    language: str,
+    relative_path: str,
+):
     # Format snippets as comments and prepend to prefix
     formatted_snippets = "\n".join(
         list(
@@ -264,7 +163,7 @@ def render_string_template(template, prefix, suffix, snippets, language, relativ
                 snippets,
             )
         )
-    )
+    )  # Format snippets as comments and prepend to prefix and given location of the file which include snippets
 
     if len(formatted_snippets) > 0:
         prefix = f"{formatted_snippets}\n\n{prefix}"
@@ -276,7 +175,6 @@ def render_string_template(template, prefix, suffix, snippets, language, relativ
     return prompt, prefix
 
 
-# Checked
 def format_external_snippet(relative_path: str, content: str, language: str) -> str:
     comment = LANGUAGE_COMMENT_SYMBOL[language]
     lines = [
@@ -287,17 +185,14 @@ def format_external_snippet(relative_path: str, content: str, language: str) -> 
     return "\n".join(lines)
 
 
-# Checked
 def get_last_n_path_parts(file_path: str, n: int) -> str:
     return os.path.join(os.path.split(file_path)[-n:])
 
 
-# Checked
 def compile_template(prefix: str, suffix: str, template: str):
     return template.format(prefix=prefix, suffix=suffix)
 
 
-# Checked
 def get_stop_tokens(completion_options):
     stop_tokens = completion_options["stop"] if "stop" in completion_options else []
     stop_tokens += COMMON_STOPS

@@ -7,7 +7,6 @@ from common_funcs import (
     get_symbols_for_snippet,
 )
 
-
 class ImportService:
     # Checked
     def __init__(self, repo_dir: str, language_server, language: str = "java"):
@@ -39,7 +38,7 @@ class ImportService:
                         file_info["imports"][node.text.decode("utf-8")] = type_def
             return file_info
         except Exception as e:
-            print(e)
+            logging.error(e)
             return None
 
     # Checked

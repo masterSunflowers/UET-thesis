@@ -63,12 +63,9 @@ class Helper:
         max_prefix_tokens = (
             self.options.max_prompt_tokens * self.options.prefix_percentage
         )
-        pruned_prefix = self.prune_lines_from_top(
-            self.full_prefix, max_prefix_tokens
-        )
+        pruned_prefix = self.prune_lines_from_top(self.full_prefix, max_prefix_tokens)
         max_suffix_tokens = min(
-            self.options.max_prompt_tokens
-            - count_tokens(pruned_prefix),
+            self.options.max_prompt_tokens - count_tokens(pruned_prefix),
             self.options.max_suffix_percentage * self.options.max_prompt_tokens,
         )
         pruned_suffix = self.prune_lines_from_bottom(

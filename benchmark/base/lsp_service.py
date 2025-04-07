@@ -21,8 +21,7 @@ from common_funcs import (
     point2index,
     read_range_in_file,
 )
-
-multilspy_logger = MultilspyLogger()
+import logging
 
 
 class LSPService:
@@ -53,7 +52,7 @@ class LSPService:
                 results.extend(definitions)
             return results
         except Exception as e:
-            print("Error getting definitions from LSP: ", e)
+            logging.error("Error getting definitions from LSP: ", e)
             return []
 
     # Checked
@@ -122,7 +121,7 @@ class LSPService:
                 case _:
                     pass
         except Exception as e:
-            print(e)
+            logging.error(e)
             return []
         return ranges
 
@@ -196,11 +195,11 @@ class LSPService:
     # Checked
     def execute_goto_provider(self, file_path, position):
         start = time.time()
-        print("Execute goto provider for", file_path, "at", position, "...")
+        logging.debug("Execute goto provider for", file_path, "at", position, "...")
         lsf = self.language_server.request_definition(
             file_path, position.row, position.column
         )
-        print("Language Server tooks:", time.time() - start, "s")
+        logging.debug("Language Server tooks:", time.time() - start, "s")
         if not lsf:
             return None
         else:

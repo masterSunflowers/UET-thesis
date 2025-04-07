@@ -6,6 +6,7 @@ import concurrent.futures
 from typing import List
 import requests
 import time
+import logging
 
 END_OF_LINE = {"python": [], "java": [";"]}
 
@@ -53,7 +54,7 @@ def deepseek_coder(prefix: str, suffix: str):
             return ""
         return filter_new_line(code)
     except Exception as e:
-        print(e)
+        logging.error(e)
         return None
 
 
@@ -90,7 +91,7 @@ def costral_latest(prefix: str, suffix: str):
             return ""
         return filter_new_line(code)
     except Exception as e:
-        print(e)
+        logging.error(e)
         return None
 
     
@@ -115,9 +116,9 @@ def prompt(prefixes: List[str], suffixes: List[str], model: str):
         ):
             idx = futures[future]
             code = future.result()
-            print(idx)
-            print(code)
-            print("=" * 100)
+            logging.info(idx)
+            logging.info(code)
+            logging.info("=" * 100)
             responses[idx] = code
     responses = [responses[idx] for idx in range(len(responses))]
     return responses

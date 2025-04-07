@@ -9,6 +9,7 @@ from tree_sitter import Node, Point, Tree
 from pydantic import BaseModel
 import os
 import dotenv
+import logging
 
 dotenv.load_dotenv(override=True)
 
@@ -37,18 +38,22 @@ COMMON_STOPS = ["/src", "#- coding: utf-8", "```"]
 FUNCTION_BLOCK_NODE_TYPES = ["block", "statement_block"]
 JAVA_PARSER = tree_sitter.Parser(language=JAVA)
 PYTHON_PARSER = tree_sitter.Parser(language=PYTHON)
-TOP_LEVEL_KEY_WORDS = {"java": ["class", "function"], "python": ["def", "class", "\"\"\"#"]}
-TOKENIZER = AutoTokenizer.from_pretrained("Salesforce/codegen-6B-mono", token=os.getenv(""))
+TOP_LEVEL_KEY_WORDS = {
+    "java": ["class", "function"],
+    "python": ["def", "class", '"""#'],
+}
+TOKENIZER = AutoTokenizer.from_pretrained(
+    "Salesforce/codegen-6B-mono", token=os.getenv("")
+)
 TYPES_TO_USE = {
     "arrow_function",
-    "generator_function_declaration"
-    "program", 
+    "generator_function_declarationprogram",
     "function_declaration",
     "function_definition",
     "method_definition",
     "method_declaration",
     "class_declaration",
-    "class_definition"
+    "class_definition",
 }
 QUERIES = {
     "root_path_context_queries": {
@@ -140,7 +145,7 @@ QUERIES = {
           (identifier) @type_identifier))))
   (#not-match? @type_identifier "^(str|int|float|bool|list|dict|tuple|set|frozenset|complex|bytes|bytearray|memoryview|range|slice|object|type|NoneType|List|Dict|Tuple|Set|FrozenSet|Union|Optional|Any|Callable|Iterable|Iterator|Generator|Coroutine|AsyncIterable|AsyncIterator|Awaitable|ContextManager|Pattern|Match|TypeVar|Generic|Sequence|Mapping|MutableMapping|MutableSequence|ByteString|Reversible|Sized|Container|Collection|AbstractSet|MutableSet|KeysView|ItemsView|ValuesView|Hashable|Sized|SupportsInt|SupportsFloat|SupportsComplex|SupportsBytes|SupportsAbs|SupportsRound|ChainMap|Counter|OrderedDict|defaultdict|deque|namedtuple|TypedDict)$")
 )
-            """)
+            """),
         },
         "java": {
             "method_declaration": dedent("""
@@ -158,7 +163,7 @@ QUERIES = {
   (type_identifier) @b
 )
             """)
-        }
+        },
     },
     "import_queries": {
         "python": dedent("""
@@ -175,14 +180,16 @@ QUERIES = {
 (import_declaration
   (scoped_identifier
     (identifier) @import))
-        """)
-    }
+        """),
+    },
 }
 SEP_REGEX = r"[\\/]"
+
 
 # Checked
 class IRange(BaseModel):
     """Range in a file, from start_point to end_point"""
+
     start_point: Point
     end_point: Point
 
@@ -200,11 +207,10 @@ def get_ast(content: str, language: str):
         ast = parser.parse(bytes(content, encoding="utf-8"))
         return ast
     except Exception as e:
-        print(e)
+        logging.error(e)
         return None
 
 
-# Checked
 def get_symbols_for_snippet(text: str) -> List[str]:
     """Get all symbols in the given text"""
     symbols = set(
@@ -220,18 +226,30 @@ def get_symbols_for_snippet(text: str) -> List[str]:
 
 
 # Checked
-def get_tree_sitter_query(query_type: str, language: str, node_type: Optional[str] = None):
+def get_tree_sitter_query(
+    query_type: str, language: str, node_type: Optional[str] = None
+):
     if query_type == "root_path_context_queries":
         if language == "java":
-            return JAVA.query(QUERIES[query_type][language][node_type]) if QUERIES[query_type][language].get(node_type, None) else None
+            return (
+                JAVA.query(QUERIES[query_type][language][node_type])
+                if QUERIES[query_type][language].get(node_type, None)
+                else None
+            )
         elif language == "python":
-            return PYTHON.query(QUERIES[query_type][language][node_type]) if QUERIES[query_type][language].get(node_type, None) else None
+            return (
+                PYTHON.query(QUERIES[query_type][language][node_type])
+                if QUERIES[query_type][language].get(node_type, None)
+                else None
+            )
     elif query_type == "import_queries":
         if language == "java":
             return JAVA.query(QUERIES[query_type][language])
         elif language == "python":
             return PYTHON.query(QUERIES[query_type][language])
     return None
+
+
 # Checked
 def get_tree_path_at_cursor(ast: Tree, cursor_index: Point) -> List[Node]:
     path = [ast.root_node]
