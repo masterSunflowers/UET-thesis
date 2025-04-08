@@ -1,10 +1,13 @@
 from helper import Helper
 from typing import List, Tuple, TypeVar
 from similar_usage import SimilarUsageService
+from similar_code import SimilarCodeService
 import os
 import sys
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+CWD = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(CWD)
+
 from utils import (
     get_window_around_cursor,
     get_last_n_path_parts,
@@ -25,7 +28,9 @@ def get_all_snippets(helper: Helper) -> Tuple[List[Snippet]]:
 
 
 def get_similar_code_snippets(helper: Helper) -> List[Snippet]:
-    return []
+    similar_code_service = SimilarCodeService(cached_dir=os.path.join(CWD, "..", "..", "data", "chunked"))
+    similar_code_snippets = similar_code_service.get_similar_code_snippets()
+    return similar_code_snippets
 
 
 def get_similar_usage_snippets(helper: Helper) -> List[Snippet]:
@@ -72,6 +77,7 @@ def get_snippets(
     helper: Helper, snippet_payload: Tuple[List[Snippet]]
 ) -> List[Snippet]:
     similar_usage_snippets, similar_code_snippets = snippet_payload
+    
     return similar_usage_snippets  # Temporary ignore similar code snippets
 
 

@@ -4,7 +4,7 @@ from textwrap import dedent
 import tree_sitter
 import tree_sitter_java as tsjava
 import tree_sitter_python as tspython
-from transformers import AutoTokenizer
+from transformers import LlamaTokenizerFast
 from tree_sitter import Node, Point, Tree
 from pydantic import BaseModel
 import os
@@ -39,7 +39,7 @@ FUNCTION_BLOCK_NODE_TYPES = ["block", "statement_block"]
 JAVA_PARSER = tree_sitter.Parser(language=JAVA)
 PYTHON_PARSER = tree_sitter.Parser(language=PYTHON)
 TOP_LEVEL_KEY_WORDS = {"java": ["class", "function"], "python": ["def", "class", "\"\"\"#"]}
-TOKENIZER = AutoTokenizer.from_pretrained("Salesforce/codegen-6B-mono", token=os.getenv(""))
+TOKENIZER = LlamaTokenizerFast.from_pretrained("hf-internal-testing/llama-tokenizer", token=os.getenv(""))
 TYPES_TO_USE = {
     "arrow_function",
     "generator_function_declaration"

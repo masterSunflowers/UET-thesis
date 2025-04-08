@@ -1,8 +1,6 @@
 import os
 from typing import List, NamedTuple, Tuple
 
-from tree_sitter import Point
-
 from common_funcs import (
     COMMON_STOPS,
     LANGUAGE_COMMENT_SYMBOL,

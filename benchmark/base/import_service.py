@@ -6,6 +6,7 @@ from common_funcs import (
     TOP_LEVEL_KEY_WORDS,
     get_symbols_for_snippet,
 )
+import logging
 
 class ImportService:
     # Checked
