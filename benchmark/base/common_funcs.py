@@ -233,6 +233,8 @@ def get_tree_sitter_query(query_type: str, language: str, node_type: Optional[st
         elif language == "python":
             return PYTHON.query(QUERIES[query_type][language])
     return None
+
+
 # Checked
 def get_tree_path_at_cursor(ast: Tree, cursor_index: Point) -> List[Node]:
     path = [ast.root_node]

@@ -8,6 +8,8 @@ from common_funcs import (
 )
 import logging
 
+logger = logging.getLogger(__name__)
+
 class ImportService:
     # Checked
     def __init__(self, repo_dir: str, language_server, language: str = "java"):
@@ -39,11 +41,11 @@ class ImportService:
                         file_info["imports"][node.text.decode("utf-8")] = type_def
             return file_info
         except Exception as e:
-            logging.error(e)
+            logger.error(e)
             return None
 
     # Checked
-    def get_snippet_by_import(self, file_path, full_prefix, full_suffix):
+    def get_snippet_by_import(self, file_path: str, full_prefix: str, full_suffix: str):
         import_snippets = []
         file_info = self.get_file_info(file_path)
         if file_info and file_info["imports"]:

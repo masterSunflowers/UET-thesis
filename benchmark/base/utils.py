@@ -16,6 +16,8 @@ random.seed(42)
 Snippet = NamedTuple("Snippet")
 TOKEN_BUFFER = 10
 
+logger = logging.getLogger("base_utils")
+
 # Checked
 def get_all_snippets(helper) -> Tuple[List[Snippet]]:
     ide_snippets = get_ide_snippets(helper)

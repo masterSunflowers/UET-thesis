@@ -21,9 +21,14 @@ import logging
 from helper import Helper
 from utils import get_all_snippets, render_prompt
 
+CWD = os.path.dirname(os.path.abspath(__file__))
 multilspy_logger = MultilspyLogger()
-logger = logging.Logger(name="prompt_builder", level=logging.DEBUG)
-logger.addHandler(logging.FileHandler(filename="build_prompt.log"))
+logging.basicConfig(
+    level=logging.DEBUG,
+    filename=os.path.join(CWD, "prompt_builder.log"),
+    format='%(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.Logger(__name__)
 
 class BuilderOutput(BaseModel):
     model_name: str
@@ -92,16 +97,17 @@ class PromptBuilder:
                     language=self.language,
                     model_name=self.model_name,
                 )
-                logging.debug("Helper is ready")
-                logging.debug(row["encode"])
+                logging.info("Helper is ready")
+                logging.info(row["encode"])
 
                 max_tries = 10
                 for i in range(max_tries):
                     try:
                         with helper.language_server.start_server():
-                            logging.debug("Init server success!!!")
+                            logging.info("Init server success!!!")
                             snippet_payload = get_all_snippets(helper)
                             # ide_snippets, import_snippets, root_path_context_snippets = snippet_payload
+                            logger.debug(f"Snippet payload: {snippet_payload}")
                             prompt, prefix, suffix, completion_options = render_prompt(
                                 snippet_payload, helper
                             )
@@ -121,6 +127,7 @@ class PromptBuilder:
                                 )
                             )
                     except multilspy.lsp_protocol_handler.server.Error:
+                        logger.warning("multilsp server error occurs")
                         time.sleep(1)
                         continue
                     except Exception as e:
@@ -129,7 +136,6 @@ class PromptBuilder:
             except Exception as e:
                 logger.error(f"Error occurs when handling {idx}:\n{e}")
                 raise e
-                logger.error("=" * 100)
                 outputs.append(
                     BuilderOutput(
                         model_name=self.model_name,

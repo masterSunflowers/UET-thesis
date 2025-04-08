@@ -21,13 +21,13 @@ from helper import Helper
 from prompt_construction import get_all_snippets, render_prompt
 
 multilspy_logger = MultilspyLogger()
+CWD = os.path.dirname(os.path.abspath(__file__))
 logging.basicConfig(
     level=logging.DEBUG,
-    filename="prompt_builder.log",
+    filename=os.path.join(CWD, "prompt_builder.log"),
     format='%(name)s - %(levelname)s - %(message)s'
 )
-logger = logging.getLogger(name="prompt_builder")
-
+logger = logging.getLogger(name=__name__)
 
 
 class BuilderOutput(BaseModel):

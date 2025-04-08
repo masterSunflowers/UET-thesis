@@ -3,6 +3,8 @@ from tree_sitter import Node
 from common_funcs import get_tree_sitter_query, TYPES_TO_USE
 import logging
 
+logger = logging.getLogger(__name__)
+
 class RootPathContextService:
     # Checked
     def __init__(self, repo_dir: str, language_server, language: str):

@@ -6,7 +6,6 @@
 import time
 
 from multilspy import SyncLanguageServer
-from multilspy.multilspy_logger import MultilspyLogger
 from tree_sitter import Node, Point
 
 from common_funcs import (
@@ -23,6 +22,7 @@ from common_funcs import (
 )
 import logging
 
+logger = logging.getLogger(__name__)
 
 class LSPService:
     def __init__(
@@ -199,7 +199,8 @@ class LSPService:
         lsf = self.language_server.request_definition(
             file_path, position.row, position.column
         )
-        logging.debug("Language Server tooks:", time.time() - start, "s")
+        logging.debug(f"Definition: {lsf}")
+        logging.debug(f"Language Server tooks: {time.time() - start} s")
         if not lsf:
             return None
         else:

@@ -65,7 +65,6 @@ def get_similar_usage_snippets(helper: Helper) -> List[Snippet]:
 def render_prompt(snippet_payload: Tuple[List[Snippet]], helper: Helper):
     snippets = get_snippets(helper, snippet_payload)
     logger.debug(f"Snippets:\n{snippets}")
-
     match helper.model_name:
         case "deepseek-coder":
             return deepseek_render_prompt(snippets, helper)
@@ -148,12 +147,9 @@ def codestral_render_prompt(snippets: List[Snippet], helper: Helper):
     completion_options = {
         "stop": ["[PREFIX]", "[SUFFIX]", "/src/", "#- coding: utf-8", "```"],
     }
-    # logger.debug(f"Completion options: {completion_options}")
     
     prefix, suffix = compile_prefix_suffix(
         prefix, suffix, helper.relative_path, snippets
     )
-    # logger.debug(f"Prefix: {prefix}")
-    # logger.debug(f"Suffix: {suffix}")
     prompt = template(prefix, suffix)
     return prompt, prefix, suffix, completion_options
