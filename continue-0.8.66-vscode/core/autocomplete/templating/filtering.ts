@@ -66,22 +66,6 @@ export const getSnippets = async (
   helper: HelperVars,
   payload: SnippetPayload,
 ): Promise<AutocompleteRankedSnippet[]> => {
-  for (let i = 0; i < payload.diffSnippets.length; i++) {
-    payload.diffSnippets[i].content = "===DIFF===\n" + payload.diffSnippets[i].content
-  }
-  for (let i = 0; i < payload.clipboardSnippets.length; i++) {
-    payload.clipboardSnippets[i].content = "===CLIPBOARD===\n" + payload.clipboardSnippets[i].content
-  }
-  for (let i = 0; i < payload.recentlyEditedRangeSnippets.length; i++) {
-    payload.recentlyEditedRangeSnippets[i].content = "===RECENTLY===\n" + payload.recentlyEditedRangeSnippets[i].content
-  }
-  for (let i = 0; i < payload.similarCodeSnippets.length; i++) {
-    payload.similarCodeSnippets[i].content = "===CODE===\n" + payload.similarCodeSnippets[i].content
-  }
-  for (let i = 0; i < payload.similarUsageSnippets.length; i++) {
-    payload.similarUsageSnippets[i].content = "===USAGE===\n" + payload.similarUsageSnippets[i].content
-  }
-
   const filteredSnippets = filterSnippetsAlreadyInCaretWindow(
         [ ...payload.rootPathSnippets, 
           ...payload.importDefinitionSnippets,
