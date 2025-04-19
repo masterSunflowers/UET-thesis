@@ -7,8 +7,8 @@ EXTENSION = {
     "java": ".java",
     "python": ".py",
 }
-from utils import get_window_around_cursor
-from common_funcs import TOKENIZER, IRange, Snippet
+from utils import get_window_around_cursor, jaccard_similarity
+from common_funcs import TOKENIZER, IRange
 
 class SimilarCodeService:
     max_chunk_size = 128
@@ -87,20 +87,6 @@ class SimilarCodeService:
             })
         return chunks
 
-    @staticmethod
-    def jaccard_similarity(list1: List[int], list2: List[int]):
-        # Convert lists to sets to handle duplicates
-        set1 = set(list1)
-        set2 = set(list2)
-        
-        # Calculate intersection and union
-        intersection = len(set1.intersection(set2))
-        union = len(set1.union(set2))
-        
-        # Return the Jaccard similarity coefficient
-        if union == 0:  # Handle edge case of two empty lists
-            return 1.0  # Two empty sets have similarity of 1
-        return intersection / union
 
     def _get_candidates(self, repo_dir: str):
         repo_name = repo_dir.split(os.path.sep)[-1]
@@ -115,6 +101,6 @@ class SimilarCodeService:
         self.chunk_project(helper.repo_dir, helper.language)
         candidates = self._get_candidates(helper.repo_dir)
         candidates["encoded"] = candidates["content"].apply(lambda candidate: self.tokenizer(candidate)["input_ids"])
-        candidates["similarity"] = candidates["encoded"].apply(lambda candidate: self.jaccard_similarity(encoded_query_text, candidate))
+        candidates["similarity"] = candidates["encoded"].apply(lambda candidate: jaccard_similarity(encoded_query_text, candidate))
         candidates = candidates.sort_values(by="similarity", ascending=False)
         return candidates.head(self.top_k)[["content", "range", "file_path"]].to_dict(orient="records")

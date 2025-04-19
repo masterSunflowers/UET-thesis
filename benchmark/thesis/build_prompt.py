@@ -30,6 +30,7 @@ logging.basicConfig(
 logger = logging.getLogger(name=__name__)
 
 
+
 class BuilderOutput(BaseModel):
     model_name: str
     built_prompt: Optional[str]
@@ -53,7 +54,7 @@ class PromptBuilder:
     ):
         self.df = pd.read_json(input_path, lines=True)
         if debug:
-            self.df = self.df[8:9]
+            self.df = self.df.head(10)
         self.repos_storage = repos_storage
         self.output_path = output_path
         self.log_path = log_path
@@ -131,6 +132,7 @@ class PromptBuilder:
                     break
             except Exception as e:
                 logger.error(f"Error occurs when handling {idx}:\n{e}")
+                raise e
                 outputs.append(
                     BuilderOutput(
                         model_name=self.model_name,

@@ -201,3 +201,26 @@ def get_stop_tokens(completion_options):
 
 def is_valid_snippet(snippet) -> bool:
     return snippet["content"].strip() != ""
+
+
+def jaccard_similarity(list1: List[int], list2: List[int]):
+    # Convert lists to sets to handle duplicates
+    set1 = set(list1)
+    set2 = set(list2)
+    
+    # Calculate intersection and union
+    intersection = len(set1.intersection(set2))
+    union = len(set1.union(set2))
+    
+    # Return the Jaccard similarity coefficient
+    if union == 0:  # Handle edge case of two empty lists
+        return 1.0  # Two empty sets have similarity of 1
+    return intersection / union
+
+
+def get_ranked_snippets(query_text: str, snippets: List[Snippet]):
+    encoded_query_text = TOKENIZER(query_text)["input_ids"]
+    encoded_snippets = list(map(lambda snippet: TOKENIZER(snippet["content"])["input_ids"], snippets))
+    scores = list(map(lambda encoded_snippet: jaccard_similarity(encoded_query_text, encoded_snippet), encoded_snippets))
+    ranked_snippets = sorted(zip(snippets, scores), key=lambda x: x[1], reverse=True)
+    return [snippet for snippet, score in ranked_snippets]

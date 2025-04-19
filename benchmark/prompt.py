@@ -7,6 +7,9 @@ from typing import List
 import requests
 import time
 import logging
+import pandas as pd
+from argparse import ArgumentParser
+
 
 END_OF_LINE = {"python": [], "java": [";"]}
 
@@ -29,7 +32,7 @@ def deepseek_coder(prefix: str, suffix: str):
         )
 
         response = client.completions.create(
-            model="deepseek-coder",
+            model="deepseek-chat",
             prompt=prefix,
             suffix=suffix,
             max_tokens=2048,
@@ -58,7 +61,7 @@ def deepseek_coder(prefix: str, suffix: str):
         return None
 
 
-def costral_latest(prefix: str, suffix: str):
+def codestral_latest(prefix: str, suffix: str):
     try:
         time.sleep(0.5)
         body = {
@@ -100,9 +103,10 @@ def get_response(prefix: str, suffix: str, model: str):
         case "deepseek-coder":
             return deepseek_coder(prefix, suffix)
         case "codestral-latest":
-            return costral_latest(prefix, suffix)
+            return codestral_latest(prefix, suffix)
         case _:
             raise NotImplementedError(f"Model {model} not implemented")
+
 
 def prompt(prefixes: List[str], suffixes: List[str], model: str):
     responses = {}
@@ -122,3 +126,19 @@ def prompt(prefixes: List[str], suffixes: List[str], model: str):
             responses[idx] = code
     responses = [responses[idx] for idx in range(len(responses))]
     return responses
+    
+
+def main(args):
+    df = pd.read_json(args.input, lines=True)
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    parser = ArgumentParser()
+    parser.add_argument("--input", type=str, required=True)
+    parser.add_argument("--output", type=str, required=True)
+    parser.add_argument("--model", type=str, required=True)
+    parser.add_argument("--max-tokens", type=int, default=1024)
+    parser.add_argument("--temperature", type=float, default=0.01)
+    parser.add_argument("--worker", type=int, default=3)
+    args = parser.parse_args()
+    
+

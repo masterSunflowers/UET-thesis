@@ -14,7 +14,10 @@ from utils import (
     shortest_relative_paths,
     count_tokens,
     render_string_template,
-    get_stop_tokens
+    get_stop_tokens,
+    filter_snippets_already_in_caret_window,
+    get_ranked_snippets,
+    is_valid_snippet
 )
 import logging
 logger = logging.getLogger("prompt_construction")
@@ -29,7 +32,7 @@ def get_all_snippets(helper: Helper) -> Tuple[List[Snippet]]:
 
 def get_similar_code_snippets(helper: Helper) -> List[Snippet]:
     similar_code_service = SimilarCodeService(cached_dir=os.path.join(CWD, "..", "..", "data", "chunked"))
-    similar_code_snippets = similar_code_service.get_similar_code_snippets()
+    similar_code_snippets = similar_code_service.get_similar_code(helper)
     return similar_code_snippets
 
 
@@ -76,8 +79,28 @@ def get_snippets(
     helper: Helper, snippet_payload: Tuple[List[Snippet]]
 ) -> List[Snippet]:
     similar_usage_snippets, similar_code_snippets = snippet_payload
-    
-    return similar_usage_snippets  # Temporary ignore similar code snippets
+    filtered_snippets = filter_snippets_already_in_caret_window([
+        *similar_code_snippets,
+        *similar_usage_snippets
+    ], helper.pruned_caret_window)
+
+    query_text = get_window_around_cursor(helper.cursor_index, helper.file_lines)
+    ranked_snippets = get_ranked_snippets(
+        query_text,
+        filtered_snippets
+    )
+    final_snippets = []
+    remaining_token_count = get_remaining_token_count(helper)
+    while (remaining_token_count > 0 and len(ranked_snippets) > 0):
+        snippet = ranked_snippets.pop(0)
+        if (not snippet or not is_valid_snippet(snippet)):
+            continue
+        snippet_size = count_tokens(snippet["content"]) + 10
+        if (remaining_token_count >= snippet_size):
+            final_snippets.append(snippet)
+            remaining_token_count -= snippet_size
+
+    return final_snippets  
 
 
 def get_remaining_token_count(helper: Helper) -> int:

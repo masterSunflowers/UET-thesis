@@ -195,7 +195,7 @@ class LSPService:
     # Checked
     def execute_goto_provider(self, file_path, position):
         start = time.time()
-        logging.debug("Execute goto provider for", file_path, "at", position, "...")
+        logging.debug(f"Execute goto provider for {file_path} at {position} ...")
         lsf = self.language_server.request_definition(
             file_path, position.row, position.column
         )
