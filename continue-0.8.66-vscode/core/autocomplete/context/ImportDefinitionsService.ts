@@ -89,13 +89,13 @@ export class ImportDefinitionsService {
         },
       });
 
-      for (const def of defs) {
-        console.log("A definition:");
-        console.log(def.filepath);
-        console.log(def.range.start.line, def.range.start.character);
-        console.log(def.range.end.line, def.range.end.character);
-        console.log("============")
-      }
+      // for (const def of defs) {
+      //   console.log("A definition:");
+      //   console.log(def.filepath);
+      //   console.log(def.range.start.line, def.range.start.character);
+      //   console.log(def.range.end.line, def.range.end.character);
+      //   console.log("============")
+      // }
 
       fileInfo.imports[match.captures[0].node.text] = await Promise.all(
         defs.map(async (def) => ({

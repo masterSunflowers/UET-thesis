@@ -30,6 +30,7 @@ async function* chunkDocumentWithoutId(
       for await (const chunk of codeChunker(filepath, contents, maxChunkSize)) {
         yield chunk;
       }
+      yield* basicChunker(contents, maxChunkSize);
       return;
     } catch (e: any) {
       Telemetry.capture("code_chunker_error", {

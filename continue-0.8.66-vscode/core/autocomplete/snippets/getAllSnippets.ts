@@ -86,8 +86,10 @@ export const getAllSnippets = async ({
   contextRetrievalService: ContextRetrievalService;
 }): Promise<SnippetPayload> => {
   // Reuse recently edit snippets of Continue
-  const recentlyEditedRangeSnippets =
-    getSnippetsFromRecentlyEditedRanges(helper);
+
+  // Temporary change to test
+  const recentlyEditedRangeSnippets = [] as AutocompleteCodeSnippet[];
+    // getSnippetsFromRecentlyEditedRanges(helper);
 
   // Reuse diff snippets, clipboard snippets of Continue
   

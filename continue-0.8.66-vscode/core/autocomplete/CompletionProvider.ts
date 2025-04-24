@@ -269,7 +269,10 @@ export class CompletionProvider {
       if (ideType === "jetbrains") {
         this.markDisplayed(input.completionId, outcome);
       }
-
+      console.log("Prompt:")
+      console.log(outcome.prompt)
+      console.log("Time:")
+      console.log(outcome.time)
       return outcome;
     } catch (e: any) {
       this.onError(e);

@@ -12,7 +12,8 @@ export const DEFAULT_AUTOCOMPLETE_OPTS: TabAutocompleteOptions = {
   slidingWindowPrefixPercentage: 0.75,
   // @deprecated TO BE REMOVED
   slidingWindowSize: 500,
-  useCache: true,
+  // Change to test
+  useCache: false,
   onlyMyCode: true,
   useRecentlyEdited: true,
   disableInFiles: undefined,
