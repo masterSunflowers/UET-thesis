@@ -1,3 +1,3 @@
 python clone.py \
-    -i ../data/CrossCodeEval/java/line_completion.jsonl \
-    -s ../data/java_repos
+    -i /var/data/lvdthieu/thesis/data/python.jsonl \
+    -s /var/data/lvdthieu/thesis/data/python_repos

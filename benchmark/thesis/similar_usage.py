@@ -96,9 +96,8 @@ class SimilarUsageService:
     def get_similar_usages(
         self, file_path: str, prefix: str, suffix: str, cursor_index: Point
     ):
-        content = (
-            prefix + ")" + suffix if prefix.endswith("(") else prefix + suffix
-        )  # Fix the content to be a valid syntax
+        with open(file_path, "r") as inputfile:
+            content = inputfile.read()
         try:
             ast = get_ast(content, self.language)
 

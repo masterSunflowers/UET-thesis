@@ -38,6 +38,7 @@ class Helper:
         language_server,
         language: str = "java",
         model_name: str = "codestral-latest",
+        suffix: str | None = None
     ):
         self.repo_dir = repo_dir
         self.language = language
@@ -55,7 +56,9 @@ class Helper:
 
         index = point2index(self.file_content, self.cursor_index)
         self.full_prefix = self.file_content[:index]
-        self.full_suffix = self.file_content[index:]
+        self.full_suffix = suffix if suffix else self.file_content[index:]
+        # print("Helper suffix")
+        # print(self.full_suffix)
         self.pruned_prefix, self.pruned_suffix = self.prune_prefix_suffix()
         self.pruned_caret_window = self.pruned_prefix + self.pruned_suffix
 

@@ -25,9 +25,10 @@ Snippet = TypeVar("Snippet")
 
 
 def get_all_snippets(helper: Helper) -> Tuple[List[Snippet]]:
-    similar_usage_snippets = get_similar_usage_snippets(helper)
+    # similar_usage_snippets = get_similar_usage_snippets(helper)
     similar_code_snippets = get_similar_code_snippets(helper)
-    return similar_usage_snippets, similar_code_snippets
+    # return similar_usage_snippets, similar_code_snippets
+    return [], similar_code_snippets
 
 
 def get_similar_code_snippets(helper: Helper) -> List[Snippet]:
@@ -176,3 +177,24 @@ def codestral_render_prompt(snippets: List[Snippet], helper: Helper):
     )
     prompt = template(prefix, suffix)
     return prompt, prefix, suffix, completion_options
+
+
+# khong refine
+# ==========RESULT==========
+# EM: 0.4414
+# ES: 79.90
+# ==========================
+
+# ket hop simiar code va similar usage
+# ==========RESULT==========
+# EM: 0.4505
+# ES: 80.29
+# ==========================
+
+
+# repocoder
+# ==========RESULT==========
+# EM: 0.4500
+# ES: 76.15
+# ==========================
+

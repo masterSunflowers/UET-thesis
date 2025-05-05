@@ -98,9 +98,15 @@ class SimilarCodeService:
     def get_similar_code(self, helper: Helper):
         query_text = get_window_around_cursor(helper.cursor_index, helper.file_lines)
         encoded_query_text = self.tokenizer(query_text)["input_ids"]
+        with open(helper.file_path, "r") as f:
+            origin_content = f.read()
+        with open(helper.file_path, "w") as f:
+            f.write(helper.full_prefix + helper.full_suffix)
         self.chunk_project(helper.repo_dir, helper.language)
         candidates = self._get_candidates(helper.repo_dir)
         candidates["encoded"] = candidates["content"].apply(lambda candidate: self.tokenizer(candidate)["input_ids"])
         candidates["similarity"] = candidates["encoded"].apply(lambda candidate: jaccard_similarity(encoded_query_text, candidate))
         candidates = candidates.sort_values(by="similarity", ascending=False)
+        with open(helper.file_path, "w") as f:
+            f.write(origin_content)
         return candidates.head(self.top_k)[["content", "range", "file_path"]].to_dict(orient="records")

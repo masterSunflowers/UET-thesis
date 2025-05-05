@@ -1,0 +1,71 @@
++++++ util/image_trainer.py
+                    batch_y = self.toGPU(batch_y, torch.long)
+
+                    
+
+                    output = self.model.forward(batch_x).view(-1, 2)
+
+                    loss_train = self.
+
+                    loss_train.backward()
+
+                    acc_loss_train += loss_train.detach().cpu().item() * len(indices)
+
+                    self.optimizer.step()
+
+                    del loss_train
+
+    
+
+
++++++ util/image_trainer.py
+                    
+
+                    output = self.model.forward(batch_x).view(-1, 2)
+
+                    loss_train = self.
+
+                    loss_train.backward()
+
+                    acc_loss_train += loss_train.detach().cpu().item() * len(indices)
+
+                    self.optimizer.step()
+
+                    del loss_train
+
+    
+
+                acc_loss_train /= len(self.training_data)
+
+
++++++ util/scenegraph_trainer.py
+                        outputs = torch.cat([outputs, output.view(-1, 2)], dim=0) #in this case the output is of shape (len_input_sequence, 2)
+                    loss_train = self.loss_func(outputs, labels)
+                    loss_train.backward()
+                    acc_loss_train += loss_train.detach().cpu().item() * len(data_list)
+                    self.optimizer.step()
+                    del loss_train
+    
+
+
++++++ util/image_trainer.py
+                    output = self.model.forward(batch_x).view(-1, 2)
+                    loss_test = self.loss_func(output, batch_y)
+                    acc_loss += loss_test.detach().cpu().item() * len(batch_y)
+                    # store output, label statistics
+                    self.update_categorical_outputs(categories, output, batch_y, batch_clip_name)
+        # calculate one risk score per sequence (this is not implemented for each category)
+
+
++++++ util/image_trainer.py
+                    indices = permutation[i:batch_index]
+                    batch_x = self.training_data[indices]
+                    batch_x = self.toGPU(batch_x, torch.float32)
+                    if self.config.training_config['task_type']  == 'sequence_classification': 
+                      batch_y = self.training_labels[indices] #batch_x = (batch, frames, channel, h, w)
+                    elif self.config.training_config['task_type']  == 'collision_prediction':
+                      batch_y = np.concatenate([np.full(len(self.training_data[i]),self.training_labels[i]) for i in indices]) #batch_x consists of individual frames not sequences/groups of frames, batch_y extends labels of each sequence to all frames in the sequence
+                    batch_y = self.toGPU(batch_y, torch.long)
+                    
+                    output = self.model.forward(batch_x).view(-1, 2)
+                    loss_train = self.

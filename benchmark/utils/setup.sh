@@ -1,3 +1,3 @@
 python setup_repo_state.py \
-    -i ../data/java_cleaned.jsonl \
-    -s ../data/java_repos_copy
+    -i /var/data/lvdthieu/thesis/data/python.jsonl \
+    -s /var/data/lvdthieu/thesis/data/python_repos_copy

@@ -9,6 +9,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import logging
 from typing import List, Optional, Dict, Any
 
+import json
 import pandas as pd
 import multilspy
 from multilspy.language_server import SyncLanguageServer
@@ -16,19 +17,20 @@ from multilspy.multilspy_config import MultilspyConfig
 from multilspy.multilspy_logger import MultilspyLogger
 from pydantic import BaseModel
 from tree_sitter import Point
-import logging
 
 from helper import Helper
-from utils import get_all_snippets, render_prompt
+from prompt_construction import get_all_snippets, render_prompt
 
-CWD = os.path.dirname(os.path.abspath(__file__))
 multilspy_logger = MultilspyLogger()
+CWD = os.path.dirname(os.path.abspath(__file__))
 logging.basicConfig(
     level=logging.DEBUG,
-    filename=os.path.join(CWD, "prompt_builder.log"),
+    filename=os.path.join(CWD, "refinement_builder.log"),
     format='%(name)s - %(levelname)s - %(message)s'
 )
-logger = logging.Logger(__name__)
+logger = logging.getLogger(name=__name__)
+
+
 
 class BuilderOutput(BaseModel):
     model_name: str
@@ -49,11 +51,11 @@ class PromptBuilder:
         language: str,
         model_name: str,
         log_steps: int = 1,
-        debug: bool = False
+        debug: bool = False,
     ):
         self.df = pd.read_json(input_path, lines=True)
         if debug:
-            self.df = self.df.head()
+            self.df = self.df.head(20)
         self.repos_storage = repos_storage
         self.output_path = output_path
         self.log_path = log_path
@@ -67,7 +69,7 @@ class PromptBuilder:
         with open(file_path, "r") as f:
             orig_file_content = f.read()
 
-        new_file_content = test_case["prompt"] + test_case["right_context"]
+        new_file_content = test_case["prompt"] + test_case["completions_intrinsic"] + test_case["right_context"]
         with open(file_path, "w") as f:
             f.write(new_file_content)
         row = len(test_case["prompt"].splitlines()) - 1
@@ -76,16 +78,16 @@ class PromptBuilder:
 
         config = MultilspyConfig.from_dict({"code_language": self.language})
         language_server = SyncLanguageServer.create(
-            config, multilspy_logger, repository_root_path=root_path
+            config, multilspy_logger, repository_root_path=root_path, 
         )
-        return file_path, orig_file_content, cursor_index, language_server
+        return file_path, orig_file_content, cursor_index, language_server, test_case["right_context"]
 
     def build_prompt(self):
         outputs = []
         for idx, row in tqdm(
             self.df.iterrows(), total=len(self.df), desc="Building prompt"
         ):
-            file_path, orig_file_content, cursor_index, language_server = (
+            file_path, orig_file_content, cursor_index, language_server, suffix = (
                 self.setup_test_state(row)
             )
             try:
@@ -96,18 +98,18 @@ class PromptBuilder:
                     language_server=language_server,
                     language=self.language,
                     model_name=self.model_name,
+                    suffix=suffix
                 )
-                logging.info("Helper is ready")
-                logging.info(row["encode"])
+                logger.info("Helper is ready")
+                logger.info(row["encode"])
 
                 max_tries = 10
                 for i in range(max_tries):
                     try:
                         with helper.language_server.start_server():
-                            logging.info("Init server success!!!")
+                            logger.info("Init server success!!!")
                             snippet_payload = get_all_snippets(helper)
-                            # ide_snippets, import_snippets, root_path_context_snippets = snippet_payload
-                            logger.debug(f"Snippet payload: {snippet_payload}")
+                            logger.debug(f"Snippet payload:\n{snippet_payload}")
                             prompt, prefix, suffix, completion_options = render_prompt(
                                 snippet_payload, helper
                             )
@@ -116,9 +118,6 @@ class PromptBuilder:
                             outputs.append(
                                 BuilderOutput(
                                     model_name=self.model_name,
-                                    # ide_snippets=ide_snippets,
-                                    # import_snippets=import_snippets,
-                                    # root_path_context_snippets=root_path_context_snippets,
                                     snippets=snippet_payload,
                                     built_prompt=prompt,
                                     prefix=prefix,
@@ -127,30 +126,29 @@ class PromptBuilder:
                                 )
                             )
                     except multilspy.lsp_protocol_handler.server.Error:
-                        logger.warning("multilsp server error occurs")
                         time.sleep(1)
                         continue
                     except Exception as e:
+                        logger.error(f"Error occurs when handling {idx}:\n{e}")
                         raise e
                     break
             except Exception as e:
                 logger.error(f"Error occurs when handling {idx}:\n{e}")
                 raise e
-                outputs.append(
-                    BuilderOutput(
-                        model_name=self.model_name,
-                        built_prompt=None,
-                        ide_snippets=None,
-                        import_snippets=None,
-                        root_path_context_snippets=None,
-                        prefix=None,
-                        suffix=None,
-                        completion_options=None,
-                    )
-                )
+                # outputs.append(
+                #     BuilderOutput(
+                #         model_name=self.model_name,
+                #         snippets=None,
+                #         built_prompt=None,
+                #         prefix=None,
+                #         suffix=None,
+                #         completion_options=None,
+                #     )
+                # )
             finally:
                 with open(file_path, "w") as f:
                     f.write(orig_file_content)
+            logger.info("="*100)
             if len(outputs) % self.log_steps == 0:
                 self.store_df(outputs, self.log_path)
 
@@ -159,7 +157,9 @@ class PromptBuilder:
     def store_df(self, updates: List[BuilderOutput], path: str):
         df = self.df.copy()[: len(updates)]
         df.reset_index(drop=True, inplace=True)
-        additional_col = pd.DataFrame([item.model_dump_json() for item in updates], columns=["builder_output"])
+        additional_col = pd.DataFrame(
+            [item.model_dump_json() for item in updates], columns=["builder_output_refine"]
+        )
         df = pd.concat([df, additional_col], axis=1)
         dir_path = os.path.dirname(path)
         if not os.path.exists(dir_path):
@@ -176,7 +176,7 @@ def main(args):
         language=args.language,
         model_name=args.model_name,
         log_steps=args.log_steps,
-        debug = args.debug
+        debug=args.debug,
     )
     prompt_builder.build_prompt()
 

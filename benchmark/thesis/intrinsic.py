@@ -9,6 +9,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import logging
 from typing import List, Optional, Dict, Any
 
+import json
 import pandas as pd
 import multilspy
 from multilspy.language_server import SyncLanguageServer
@@ -24,7 +25,7 @@ multilspy_logger = MultilspyLogger()
 CWD = os.path.dirname(os.path.abspath(__file__))
 logging.basicConfig(
     level=logging.DEBUG,
-    filename=os.path.join(CWD, "prompt_builder.log"),
+    filename=os.path.join(CWD, "intrinsic_builder.log"),
     format='%(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(name=__name__)
@@ -49,18 +50,20 @@ class PromptBuilder:
         log_path: str,
         language: str,
         model_name: str,
+        only: str,
         log_steps: int = 1,
         debug: bool = False,
     ):
         self.df = pd.read_json(input_path, lines=True)
         if debug:
-            self.df = self.df.head(10)
+            self.df = self.df.head(5)
         self.repos_storage = repos_storage
         self.output_path = output_path
         self.log_path = log_path
         self.log_steps = log_steps
         self.language = language
         self.model_name = model_name
+        self.only = only
 
     def setup_test_state(self, test_case):
         root_path = os.path.join(self.repos_storage, test_case["encode"])
@@ -104,25 +107,32 @@ class PromptBuilder:
                 max_tries = 10
                 for i in range(max_tries):
                     try:
-                        with helper.language_server.start_server():
-                            logger.info("Init server success!!!")
-                            snippet_payload = get_all_snippets(helper)
-                            logger.debug(f"Snippet payload:\n{snippet_payload}")
-                            prompt, prefix, suffix, completion_options = render_prompt(
-                                snippet_payload, helper
+                        # with helper.language_server.start_server():
+                        # logger.info("Init server success!!!")
+                        # snippet_payload = get_all_snippets(helper)
+                        if self.only == "similar_code":
+                            snippet_payload = row["snippets_only_similar_code"]
+                        elif self.only == "similar_usage":
+                            snippet_payload = row["snippets_only_similar_usage"]
+                        else:
+                            print(self.only)
+                            raise NotImplementedError()
+                        logger.debug(f"Snippet payload:\n{snippet_payload}")
+                        prompt, prefix, suffix, completion_options = render_prompt(
+                            snippet_payload, helper
+                        )
+                        if prompt is None:
+                            logger.warning(f"Encounter outlier at index {idx}")
+                        outputs.append(
+                            BuilderOutput(
+                                model_name=self.model_name,
+                                snippets=snippet_payload,
+                                built_prompt=prompt,
+                                prefix=prefix,
+                                suffix=suffix,
+                                completion_options=completion_options,
                             )
-                            if prompt is None:
-                                logger.warning(f"Encounter outlier at index {idx}")
-                            outputs.append(
-                                BuilderOutput(
-                                    model_name=self.model_name,
-                                    snippets=snippet_payload,
-                                    built_prompt=prompt,
-                                    prefix=prefix,
-                                    suffix=suffix,
-                                    completion_options=completion_options,
-                                )
-                            )
+                        )
                     except multilspy.lsp_protocol_handler.server.Error:
                         time.sleep(1)
                         continue
@@ -156,7 +166,7 @@ class PromptBuilder:
         df = self.df.copy()[: len(updates)]
         df.reset_index(drop=True, inplace=True)
         additional_col = pd.DataFrame(
-            [item.model_dump_json() for item in updates], columns=["builder_output"]
+            [item.model_dump_json() for item in updates], columns=["builder_output_intrinsic"]
         )
         df = pd.concat([df, additional_col], axis=1)
         dir_path = os.path.dirname(path)
@@ -174,6 +184,7 @@ def main(args):
         language=args.language,
         model_name=args.model_name,
         log_steps=args.log_steps,
+        only=args.only,
         debug=args.debug,
     )
     prompt_builder.build_prompt()
@@ -188,6 +199,7 @@ if __name__ == "__main__":
     parser.add_argument("-m", "--model", dest="model_name")
     parser.add_argument("-lang", "--language", dest="language", default="java")
     parser.add_argument("-lg", "--log-steps", dest="log_steps", type=int, default=1)
+    parser.add_argument("--only", dest="only", type=str, choices=["similar_code", "similar_usage"])
     parser.add_argument("--debug", dest="debug", action="store_true", default=False)
     args = parser.parse_args()
     main(args)
