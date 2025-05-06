@@ -106,8 +106,8 @@ export const getAllSnippets = async ({
   getDefinitionsFromLsp: GetLspDefinitionsFunction;
   contextRetrievalService: ContextRetrievalService;
 }): Promise<SnippetPayload> => {
-  const recentlyEditedRangeSnippets =
-    getSnippetsFromRecentlyEditedRanges(helper);
+  const recentlyEditedRangeSnippets = [] as AutocompleteCodeSnippet[];
+    // getSnippetsFromRecentlyEditedRanges(helper);
 
   const [
     rootPathSnippets,
@@ -122,7 +122,8 @@ export const getAllSnippets = async ({
     ),
     racePromise(getIdeSnippets(helper, ide, getDefinitionsFromLsp)),
     racePromise(getDiffSnippets(ide)),
-    racePromise(getClipboardSnippets(ide)),
+    // racePromise(getClipboardSnippets(ide)),
+    []
   ]);
 
   return {

@@ -254,6 +254,7 @@ export class CompletionProvider {
         timestamp: Date.now(),
         ...helper.options,
       };
+      console.log("Time taken: ", outcome.time, "ms");
 
       //////////
 
